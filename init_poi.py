@@ -4,6 +4,7 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 
+
 def init_poi(target_path, prototype_path):
     prototypes = [join(prototype_path, f) for f in listdir(prototype_path) if isfile(join(prototype_path, f))]
     target = af.parse(target_path)
