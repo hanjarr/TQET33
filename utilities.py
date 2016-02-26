@@ -1,3 +1,4 @@
+
 from amrafile import amrafile as af
 from amracommon.analysis.registration import normalized_cross_correlation
 from os import listdir
@@ -17,46 +18,61 @@ def init_poi(target_path, prototype_path, search_size, poi = 'T9'):
     for index, prototype in enumerate(prototypes):
         prototype_signals.append(af.parse(prototype))
         prototype_pois.append(prototype_signals[index].get_poi(poi))
-        
-    poi_index, reduced_data = search_reduction(target, prototype_signals, prototype_pois, search_size)
+    
+    ''' Extract best poi according to ncc and the reduced data space'''    
+    best_poi, reduced_data = search_reduction(target, prototype_signals, prototype_pois, search_size)
 
-    best_poi = prototype_pois[poi_index]
+    ''' True poi'''
+    target_poi = np.array(target.get_poi(poi))
+    rep_poi = np.tile(target_poi, (len(prototype_pois),1))
 
+    ''' Diff from every prototype poi '''
+    poi_diff = list(np.sum(abs(np.array(prototype_pois) - rep_poi), axis=1))
+
+    ''' Best poi to choose from prototypes '''
+    prototype_poi_index = poi_diff.index(min(poi_diff))
+
+    print(poi_diff)
+    print(target_poi)
     print(best_poi)
-    print(target.get_poi(poi))
+    print(prototype_pois[prototype_poi_index])
 
     mean_poi = np.array(prototype_pois).mean(axis=0)
 
 def search_reduction(target, prototype_signals, prototype_pois, search_size):
     voxel_sizes = target.voxel_size()
-    size = np.round(search_size/np.array(voxel_sizes))
-    size = size.astype(int)
+    reduced_size = np.round(search_size/np.array(voxel_sizes))
+    reduced_size = reduced_size.astype(int)
 
     target_data = target.data
     prototype_data = [prototype.data for prototype in prototype_signals]
 
-    reduced_prototypes, reduced_target, ncc = [], [], []
+    reduced_prototypes, reduced_targets, ncc = [], [], []
 
     for index, poi in enumerate(prototype_pois):
         prototype = prototype_data[index]
 
-        z_lower = poi[0]-size[0]
-        z_upper = poi[0]+size[0]
-        y_lower = poi[1]-size[1]
-        y_upper = poi[1]+size[1]
-        x_lower = poi[2]-size[2]
-        x_upper = poi[2]+size[2]
+        z_lower = poi[0]-reduced_size[0]
+        z_upper = poi[0]+reduced_size[0]
+        y_lower = poi[1]-reduced_size[1]
+        y_upper = poi[1]+reduced_size[1]
+        x_lower = poi[2]-reduced_size[2]
+        x_upper = poi[2]+reduced_size[2]
 
-        reduced_prototypes.append(prototype[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper])
-        reduced_target.append(target_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper])
+        reduced_prototype = prototype[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+        reduced_target = target_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
 
-        ncc.append(normalized_cross_correlation(reduced_prototypes[index], reduced_target[index]))
+        reduced_prototypes.append(reduced_prototype)
+        reduced_targets.append(reduced_target)
+
+        ncc.append(normalized_cross_correlation(reduced_prototype, reduced_target))
 
     poi_index = ncc.index(max(ncc))
-
+    
     reduced_data = reduced_target[poi_index]
+    best_poi = prototype_pois[poi_index]
 
-    return poi_index, reduced_data
+    return best_poi, reduced_data
 
 
 
