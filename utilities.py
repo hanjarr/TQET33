@@ -33,11 +33,17 @@ def init_poi(target_path, prototype_path, search_size, poi = 'T9'):
     prototype_poi_index = poi_diff.index(min(poi_diff))
 
     print(poi_diff)
+
+    print('\n'+'Target:' )
     print(target_poi)
+    print('\n'+'Best ncc:')
     print(best_poi)
+    print('\n'+'Best prototype:' )
     print(prototype_pois[prototype_poi_index])
 
     mean_poi = np.array(prototype_pois).mean(axis=0)
+
+    return reduced_data
 
 def search_reduction(target, prototype_signals, prototype_pois, search_size):
     voxel_sizes = target.voxel_size()
