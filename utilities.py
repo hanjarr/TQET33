@@ -82,15 +82,15 @@ def search_reduction(target, prototype_signals, prototype_pois, search_size):
 
     best_poi = prototype_pois[poi_index]
 
-    plt.figure(1)
-    plt.colorbar
-    plt.subplot(211)
-    plt.imshow(np.flipud(reduced_data[:,np.round(reduced_size[2]/2),:]), plt.get_cmap('gray'))
+    # plt.figure(1)
+    # plt.colorbar
+    # plt.subplot(211)
+    # plt.imshow(np.flipud(reduced_data[:,np.round(reduced_size[2]/2),:]), plt.get_cmap('gray'))
 
-    plt.subplot(212)
-    plt.imshow(np.flipud(reduced_prototype[:,np.round(reduced_size[2]/2),:]), plt.get_cmap('gray'))
+    # plt.subplot(212)
+    # plt.imshow(np.flipud(reduced_prototype[:,np.round(reduced_size[2]/2),:]), plt.get_cmap('gray'))
 
-    plt.show()
+    # plt.show()
 
     # plt.figure(1)
     # plt.colorbar

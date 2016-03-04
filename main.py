@@ -20,7 +20,7 @@ def main():
 
     reduced_data = init_poi(target_path,prototype_path, search_size, poi = 'T9')
 
-    extracted_features = feature.feature_extraction(reduced_data)
+    extracted_features = feature.feature_extraction(reduced_data, filter_type = 'Sobel')
 
 if __name__ == "__main__":
     main()

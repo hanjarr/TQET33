@@ -1,6 +1,7 @@
 ''' Feature extraction '''
 import numpy as np
 from scipy.ndimage.filters import convolve as conv
+from scipy.ndimage.filters import sobel
 import random as rand
 
 
@@ -10,22 +11,29 @@ class Feature(object):
         self._nbr_of_filters = nbr_of_filters
         self._patch_size = patch_size
 
-    def feature_extraction(self, target, filter_bank = 'Haar'):
+    def feature_extraction(self, target, filter_type = 'Haar'):
         filter_bank, parameters = self.generate_haar()
         param = list(parameters)
         extracted_features = []
 
-        for ind, haar_filter in enumerate(filter_bank):
-            rep_filter = np.tile(haar_filter[None,:,:], ((param[ind][0]),1,1))
 
-            ''' Zero pad the convolutional kernel '''
-            front_zeros = np.zeros((param[ind][1], self._patch_size, self._patch_size))
-            back_zeros = np.zeros((param[ind][2], self._patch_size, self._patch_size))
+        if filter_type == 'Sobel':
+            for direction in range(2,-1,-1):
+                derivative = sobel(target, direction)
+                extracted_features.append(derivative)
 
-            complete_filter = np.vstack((np.vstack((front_zeros,rep_filter)),back_zeros))
+        else:
+            for ind, haar_filter in enumerate(filter_bank):
+                rep_filter = np.tile(haar_filter[None,:,:], ((param[ind][0]),1,1))
 
-            target_conv = conv(target, complete_filter, mode='constant', cval=0.0)
-            extracted_features.append(target_conv)
+                ''' Zero pad the convolutional kernel '''
+                front_zeros = np.zeros((param[ind][1], self._patch_size, self._patch_size))
+                back_zeros = np.zeros((param[ind][2], self._patch_size, self._patch_size))
+
+                complete_filter = np.vstack((np.vstack((front_zeros,rep_filter)),back_zeros))
+
+                target_conv = conv(target, complete_filter, mode='constant', cval=0.0)
+                extracted_features.append(target_conv)
         return extracted_features
 
 
@@ -47,3 +55,4 @@ class Feature(object):
         haar_parameters = zip(*[z_size, front_zeros, back_zeros])
 
         return haar_bank, haar_parameters
+
