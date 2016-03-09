@@ -13,12 +13,15 @@ def main():
 
     nbr_of_filters = 10
     patch_size = 7
-    search_size = np.array([50,50,50])
+    search_size = np.array([50,40,40])
+
+    ''' Search extension for cross correlation''' 
+    extension = 3
 
     ''' Create feature object '''
     feature = Feature(nbr_of_filters, patch_size)
 
-    reduced_data = init_poi(target_path,prototype_path, search_size, poi = 'RightFemur')
+    reduced_data = init_poi(target_path,prototype_path, search_size, extension, poi = 'LeftFemur')
 
     #extracted_features = feature.feature_extraction(reduced_data, filter_type = 'Sobel')
 
