@@ -39,9 +39,8 @@ def init_poi(target_path, prototype_path, search_size, extension, poi = 'T9'):
 
     ''' Best poi according to highest ncc measure'''
     max_ncc_poi = prototype_pois[poi_index]
-    #max_ncc_poi_full = prototype_pois[poi_index_full]
 
-    correaltion_matrix = cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size, extension)
+    adjusted_poi = cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size, extension)
     ''' Number of prototypes used'''
     nbr_of_prototypes = len(prototypes)
 
@@ -54,11 +53,7 @@ def init_poi(target_path, prototype_path, search_size, extension, poi = 'T9'):
 
     ''' Differences sorted in ascending order'''
     sorted_diff = sorted(poi_diff)
-
     sorted_index = sorted_diff.index(poi_diff[poi_index])
-    #sorted_index_full = sorted_diff.index(poi_diff[poi_index_full])
-
-    #max_ncc_poi_full = prototype_pois[poi_index_full]
 
     ''' Best poi to choose from prototypes '''
     prototype_poi_index = poi_diff.index(min(poi_diff))
@@ -70,10 +65,6 @@ def init_poi(target_path, prototype_path, search_size, extension, poi = 'T9'):
     print(max_ncc_poi)
     print(poi_diff[poi_index])
     print(sorted_index)
-    #print('\n'+'Best ncc full:')
-    #print(max_ncc_poi_full)
-    #print(poi_diff[poi_index_full])
-    #print(sorted_index_full)
     print('\n'+'Best prototype poi:' )
     print(prototype_pois[prototype_poi_index])
     print(poi_diff[prototype_poi_index])
@@ -144,7 +135,7 @@ def plot_reduced(target_data, reduced_target, reduced_prototype, max_ncc_poi, ta
 def search_reduction(target_data, prototype_data, target_poi, prototype_pois, reduced_size):
 
     ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
-    reduced_prototypes, reduced_targets, ncc, ncc_full = [], [], [], []
+    reduced_prototypes, reduced_targets, ncc = [], [], []
 
     ''' Calculate ncc between reduced target and reduced prototype space. 
         Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined mid point''' 
@@ -170,12 +161,10 @@ def search_reduction(target_data, prototype_data, target_poi, prototype_pois, re
 
         ''' Calculate ncc and store in lists'''
         ncc.append(normalized_cross_correlation(reduced_prototype, reduced_target))
-        #ncc_full.append(normalized_cross_correlation(prototype,target_data))
 
     ''' Find index of poi which corresponds to highest ncc'''
-    poi_index = ncc.index(max(ncc))
-    #poi_index_full = ncc_full.index(max(ncc_full))
-    
+    poi_index = ncc.index(max(ncc))    
+
     '''------------Poi positioned in middle of reduced_target-------------------'''
     #print(reduced_targets[0][reduced_size[0],reduced_size[1],reduced_size[2]])
 
@@ -189,6 +178,7 @@ def search_reduction(target_data, prototype_data, target_poi, prototype_pois, re
 
 def cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size, extension):
 
+    ''' Extend the reduced search space for cross correlation'''
     z_lower = max_ncc_poi[0]-extension-reduced_size[0]
     z_upper = max_ncc_poi[0]+extension+reduced_size[0]+1
     y_lower = max_ncc_poi[1]-extension-reduced_size[1]
@@ -200,6 +190,7 @@ def cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size,
     correlation_matrix = np.zeros((2*extension+1,2*extension+1,2*extension+1))
     center = np.array([extension, extension, extension])
 
+    ''' Extract array shapes'''
     target_shape = correlation_target.shape
     prototype_shape = reduced_prototype.shape
 
@@ -210,10 +201,14 @@ def cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size,
                 correlation_kernel = correlation_target[z:z+prototype_shape[0],y:y+prototype_shape[1],x:x+prototype_shape[2]]
                 correlation_matrix[z,y,x] = normalized_cross_correlation(reduced_prototype, correlation_kernel)
 
+    ''' Extract index of max ncc from correlation matrix'''
     max_ncc_index = unravel_index(correlation_matrix.argmax(), correlation_matrix.shape)
-    adjusted_poi = max_ncc_index - center + max_ncc_poi
-    print(correlation_matrix)
-    print(max_ncc_index)
-    print(adjusted_poi)
 
-    return correlation_matrix
+    ''' Calculate updated POI'''
+    adjusted_poi = max_ncc_index - center + max_ncc_poi
+
+    #print(correlation_matrix)
+    #print(max_ncc_index)
+    #print(adjusted_poi)
+
+    return adjusted_poi
