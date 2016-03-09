@@ -26,7 +26,7 @@ class Feature(object):
             for ind, haar_filter in enumerate(filter_bank):
                 rep_filter = np.tile(haar_filter[None,:,:], ((param[ind][0]),1,1))
 
-                ''' Zero pad the convolutional kernel '''
+                ''' Zero pad the Haar convolutional kernel '''
                 front_zeros = np.zeros((param[ind][1], self._patch_size, self._patch_size))
                 back_zeros = np.zeros((param[ind][2], self._patch_size, self._patch_size))
 
