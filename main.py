@@ -23,7 +23,7 @@ def main():
 
     reduced_data = init_poi(target_path,prototype_path, search_size, extension, poi = 'LeftFemur')
 
-    #extracted_features = feature.feature_extraction(reduced_data, filter_type = 'Sobel')
+    extracted_features = feature.feature_extraction(reduced_data, filter_type = 'Haar')
 
 if __name__ == "__main__":
     main()

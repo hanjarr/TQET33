@@ -40,16 +40,19 @@ def init_poi(target_path, prototype_path, search_size, extension, poi = 'T9'):
     ''' Best poi according to highest ncc measure'''
     max_ncc_poi = prototype_pois[poi_index]
 
+    ''' Check correlation in nearby region to adjust poi initialization'''
     adjusted_poi = cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size, extension)
+
     ''' Number of prototypes used'''
     nbr_of_prototypes = len(prototypes)
 
     ''' Repmat the target poi to compare distances'''
+    target_voxel_size = target.voxel_size()
     rep_target_poi = np.tile(target_poi, (nbr_of_prototypes,1))
-    rep_voxel_sizes = np.tile(target.voxel_size(), (nbr_of_prototypes,1))
+    rep_target_size = np.tile(target_voxel_size, (nbr_of_prototypes,1))
 
     ''' Diff between target poi ground truth and every deformed prototype poi in mm'''
-    poi_diff = list(np.sum(abs(np.array(prototype_pois) - rep_target_poi)*rep_voxel_sizes, axis=1))
+    poi_diff = list(np.sum(abs(np.array(prototype_pois) - rep_target_poi)*rep_target_size, axis=1))
 
     ''' Differences sorted in ascending order'''
     sorted_diff = sorted(poi_diff)
@@ -135,10 +138,11 @@ def plot_reduced(target_data, reduced_target, reduced_prototype, max_ncc_poi, ta
 def search_reduction(target_data, prototype_data, target_poi, prototype_pois, reduced_size):
 
     ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
-    reduced_prototypes, reduced_targets, ncc = [], [], []
+    reduced_prototypes, reduced_targets, reduced_masks, ncc = [], [], [], []
+    reduced_mask = np.zeros((target_data.shape), dtype = int)
 
     ''' Calculate ncc between reduced target and reduced prototype space. 
-        Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined mid point''' 
+        Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
 
     for ind, poi in enumerate(prototype_pois):
 
@@ -155,9 +159,14 @@ def search_reduction(target_data, prototype_data, target_poi, prototype_pois, re
         reduced_prototype = prototype[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
         reduced_target = target_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
 
+        ''' Create binary mask of the reduced space'''
+        reduced_mask_copy = reduced_mask.copy()
+        reduced_mask_copy[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = 1
+
         ''' Append reduced numpy arrays to lists'''
         reduced_prototypes.append(reduced_prototype)
         reduced_targets.append(reduced_target)
+        reduced_masks.append(reduced_mask_copy)
 
         ''' Calculate ncc and store in lists'''
         ncc.append(normalized_cross_correlation(reduced_prototype, reduced_target))
@@ -171,6 +180,7 @@ def search_reduction(target_data, prototype_data, target_poi, prototype_pois, re
     ''' Extract reduced data corresponding to highest ncc'''
     reduced_target = reduced_targets[poi_index]
     reduced_prototype = reduced_prototypes[poi_index]
+    reduced_mask = reduced_masks[poi_index]
 
 
     return reduced_target, reduced_prototype, poi_index
@@ -207,8 +217,23 @@ def cross_correlation(target_data, reduced_prototype, max_ncc_poi, reduced_size,
     ''' Calculate updated POI'''
     adjusted_poi = max_ncc_index - center + max_ncc_poi
 
-    #print(correlation_matrix)
-    #print(max_ncc_index)
-    #print(adjusted_poi)
-
     return adjusted_poi
+
+def extract_ground_truth(reduced_size, voxel_size):
+    z_voxel_dist, y_voxel_dist, x_voxel_dist = abs(np.mgrid[-reduced_size[0]:reduced_size[0]+1,
+        -reduced_size[1]:reduced_size[1]+1, 
+        -reduced_size[2]:reduced_size[2]+1])
+
+    z_dist = z_voxel_dist*voxel_size[0]
+    y_dist = y_voxel_dist*voxel_size[1]
+    x_dist = x_voxel_dist*voxel_size[2]
+
+    
+    ground_truth = np.sqrt(z_dist**2 + y_dist**2 + x_dist**2)
+
+    return ground_truth
+
+
+
+
+
