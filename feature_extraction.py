@@ -4,6 +4,7 @@ from scipy.ndimage.filters import convolve as conv
 from scipy.ndimage.filters import sobel
 import matplotlib.pyplot as plt
 import random as rand
+import time
 
 
 class Feature:
@@ -13,6 +14,10 @@ class Feature:
         self._patch_size = patch_size
 
     def feature_extraction(self, target, filter_type = 'Haar'):
+
+        start = time.time()
+        print("Feature extraciotn")
+
         filter_bank, parameters = self.generate_haar()
         param = list(parameters)
 
@@ -37,6 +42,9 @@ class Feature:
 
                 target_conv = conv(target, complete_filter, mode='constant', cval=0.0)
                 extracted_features[:,ind] = np.ravel(target_conv)
+
+        end = time.time()
+        print(end - start)
 
         return extracted_features
 
