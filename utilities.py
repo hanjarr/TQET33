@@ -15,7 +15,7 @@ class Utils:
         ''' Get target from .amra format and full paths to prototypes'''
         self._target = af.parse(target_path)
 
-        ''' Get target and prototypes as numpy arrays'''
+        ''' Get target as numpy arrays'''
         self._target_data = self._target.data
 
         ''' Size of target data'''
@@ -36,36 +36,19 @@ class Utils:
         self._extension = extension
 
 
-
-    def init_poi(self, prototype_path):
+    def init_poi(self, prototype_data, prototype_pois):
 
         ''' List with paths to all prototypes'''
-        prototype_paths = [join(prototype_path, f) for f in listdir(prototype_path) if isfile(join(prototype_path, f))]
-
-
-        ''' Init empty lists for prototype signals and pois'''
-        prototypes, prototype_pois = [], []
-
-        start = time.time()
-        print("Load prototypes")
-
-        ''' Get poi positions from prototypes'''
-        for index, prototype in enumerate(prototype_paths):
-            prototypes.append(af.parse(prototype))
-            prototype_pois.append(prototypes[index].get_poi(self._poi))
-
-        ''' Extract prototype data as numpy arrays'''
-        prototype_data = [prototype.data for prototype in prototypes]
-
-        end = time.time()
-        print(end - start)
+        #prototype_paths = [join(prototype_path, f) for f in listdir(prototype_path) if isfile(join(prototype_path, f))]
+        #prototype_paths = prototype_path
 
 
         start = time.time()
         print("Extract best initial poi")
         
         ''' Extract best poi according to ncc and the reduced data space'''    
-        reduced_target, reduced_prototype, reduced_mask, poi_index = self.search_reduction(prototype_data, prototype_pois)
+        #reduced_target, reduced_prototype, reduced_mask, poi_index = self.search_reduction(prototype_data, prototype_pois)
+        reduced_target, reduced_mask, poi_index = self.search_reduction(prototype_data, prototype_pois)
 
         end = time.time()
         print(end - start)
@@ -76,11 +59,11 @@ class Utils:
         ''' Best poi according to highest ncc measure'''
         ncc_poi = prototype_pois[poi_index]
 
-        ''' Check correlation in nearby region to adjust poi initialization'''
-        adjusted_poi = self.cross_correlation(reduced_prototype, ncc_poi)
+        #''' Check correlation in nearby region to adjust poi initialization'''
+        #adjusted_poi = self.cross_correlation(reduced_prototype, ncc_poi)
 
         ''' Number of prototypes used'''
-        nbr_of_prototypes = len(prototypes)
+        nbr_of_prototypes = len(prototype_data)
 
         ''' Repmat the target poi to compare distances'''
         rep_target_poi = np.tile(self._target_poi, (nbr_of_prototypes,1))
@@ -205,8 +188,8 @@ class Utils:
             reduced_mask_copy[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
 
             ''' Append reduced numpy arrays to lists'''
-            reduced_prototypes.append(reduced_prototype)
-            reduced_targets.append(reduced_target)
+            #reduced_prototypes.append(reduced_prototype)
+            #reduced_targets.append(reduced_target)
             reduced_masks.append(reduced_mask_copy)
 
             ''' Calculate ncc and store in lists'''
@@ -219,12 +202,43 @@ class Utils:
         #print(reduced_targets[0][reduced_size[0],reduced_size[1],reduced_size[2]])
 
         ''' Extract reduced data corresponding to highest ncc'''
-        reduced_target = reduced_targets[poi_index]
-        reduced_prototype = reduced_prototypes[poi_index]
+        #reduced_target = reduced_targets[poi_index]
+        #reduced_prototype = reduced_prototypes[poi_index]
         reduced_mask = reduced_masks[poi_index]
+        reduced_target = np.reshape(self._target_data[reduced_mask], (2*self._reduced_size+1))
 
+        return reduced_target, reduced_mask, poi_index
 
-        return reduced_target, reduced_prototype, reduced_mask, poi_index
+    def simple_search_reduction(self):
+
+        ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
+        reduced_mask = np.zeros((self._target_size), dtype = bool)
+
+        ''' Calculate ncc between reduced target and reduced prototype space. 
+            Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
+
+        reduced_size = self._reduced_size
+        poi = self._target_poi + np.round(abs(np.random.normal(0, 3, 3))).astype(int)
+
+        z_lower = poi[0]-reduced_size[0]
+        z_upper = poi[0]+reduced_size[0]+1
+        y_lower = poi[1]-reduced_size[1]
+        y_upper = poi[1]+reduced_size[1]+1
+        x_lower = poi[2]-reduced_size[2]
+        x_upper = poi[2]+reduced_size[2]+1
+
+        ''' Extract reduced space from prototype and target'''
+        reduced_target = self._target_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+
+        ''' Create binary mask of the reduced space'''
+        reduced_mask_copy = reduced_mask.copy()
+        reduced_mask[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
+
+        print('\n'+'Ground truth:' )
+        print(self._target_poi)
+
+        return reduced_target, reduced_mask
+
 
 
     def cross_correlation(self, reduced_prototype, ncc_poi):
@@ -309,4 +323,24 @@ class Utils:
         poi_pos = np.array([mesh[poi_index] for mesh in reduced_mesh_indices])
 
         return poi_pos
+
+def load_prototypes(prototype_paths, poi):
+    ''' Init empty lists for prototype signals and pois'''
+    prototypes, prototype_pois = [], []
+
+    start = time.time()
+    print("Load prototypes")
+
+    ''' Get poi positions from prototypes'''
+    for index, prototype in enumerate(prototype_paths):
+        prototypes.append(af.parse(prototype))
+        prototype_pois.append(prototypes[index].get_poi(poi))
+
+    ''' Extract prototype data as numpy arrays'''
+    prototype_data = [prototype.data for prototype in prototypes]
+
+    end = time.time()
+    print(end - start)
+
+    return prototype_data, prototype_pois
 
