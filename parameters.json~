@@ -21,7 +21,7 @@
 
   "directory": "0030/",
   "poi": "LeftFemur",
-  "search_size": [20,25,25],
+  "search_size": [25,20,20],
   "nbr_of_filters": 10000,
   "selected_filters": 200,
   "patch_size": 7,

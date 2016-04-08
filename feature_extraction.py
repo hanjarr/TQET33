@@ -13,16 +13,17 @@ class Feature:
         self._nbr_of_filters = nbr_of_filters
         self._patch_size = patch_size
 
-    def feature_extraction(self, target, filter_bank, filter_parameters):
+    def feature_extraction(self, water_target, fat_target, filter_bank, filter_parameters):
 
-        start = time.time()
-        print("Feature extraction")
+        #start = time.time()
+        #print("Feature extraction")
 
         #filter_bank, parameters = self.generate_haar()
         #param = list(filter_parameters)
 
         ''' Allocate memory for storing feature vectors ''' 
-        extracted_features = np.zeros((len(np.ravel(target)),filter_bank.shape[0]))
+        water_features = np.zeros((len(np.ravel(water_target)),filter_bank.shape[0]))
+        fat_features = water_features.copy()
 
 
         # if filter_type == 'Sobel':
@@ -40,13 +41,18 @@ class Feature:
 
             complete_filter = np.vstack((np.vstack((front_zeros,rep_filter)),back_zeros))
 
-            target_conv = conv(target, complete_filter, mode='constant', cval=0.0)
-            extracted_features[:,ind] = np.ravel(target_conv)
+            ''' Convolve the water and fat signal with the filter bank'''
+            water_conv = conv(water_target, complete_filter, mode='constant', cval=0.0)
+            #fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
 
-        end = time.time()
-        print(end - start)
+            water_features[:,ind] = np.ravel(water_conv)
+            #fat_features[:,ind] = np.ravel(fat_conv)
 
-        return extracted_features
+
+        #end = time.time()
+        #print(end - start)
+
+        return water_features, fat_features
 
 
     def generate_haar(self):
