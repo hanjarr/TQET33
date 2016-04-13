@@ -1,5 +1,4 @@
 from sklearn.ensemble import ExtraTreesRegressor
-import matplotlib.pyplot as plt
 import numpy as np
 import time
 
@@ -63,29 +62,5 @@ def run_forest(estimators, X_test):
     print(end - start)
 
     return regression
-
-def plot_importances(estimators, nbr_of_features):
-
-    ''' Extract feature importances '''
-    importances = estimators["Regression forest"].feature_importances_
-
-    ''' Get sorted indices of most important features'''
-    std = np.std([tree.feature_importances_ for tree in estimators["Regression forest"].estimators_], axis=0)
-    indices = np.argsort(importances)[::-1]
-
-    '''Print the feature ranking'''
-    print("Feature ranking:")
-
-    for f in range(nbr_of_features):
-        print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
-
-    ''' Plot the feature importances of the forest '''
-    plt.figure()
-    plt.title("Feature importances")
-    plt.bar(range(nbr_of_features), importances[indices],
-        color="r", yerr=std[indices], align="center")
-    plt.xticks(range(nbr_of_features), indices)
-    plt.xlim([-1, nbr_of_features])
-    plt.show()
 
 

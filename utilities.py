@@ -42,15 +42,10 @@ class Utils:
 
 
     def init_poi(self, prototype_data, prototype_pois):
-        #start = time.time()
-        #print("Extract best initial poi")
         
         ''' Extract best poi according to ncc and the reduced data space'''    
         #reduced_target, reduced_prototype, reduced_mask, poi_index = self.search_reduction(prototype_data, prototype_pois)
         reduced_water, reduced_fat, reduced_mask, poi_index = self.test_reduction(prototype_data, prototype_pois)
-
-        #end = time.time()
-        #print(end - start)
 
 
         ''' Best poi according to highest ncc measure'''
@@ -95,64 +90,6 @@ class Utils:
 
         return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
 
-    def plot_reduced(self, reduced_target, ncc_poi, reg_poi):
-
-        reduced_size = self._reduced_size
-
-        # ''' Show reduced data in target'''    
-        # plt.figure()
-        # plt.frameon=False
-        # plt.autoscale(False)
-        # plt.imshow((reduced_target[:,self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
-
-
-        # ''' Show reduced data in prototype'''
-        # plt.subplot(212)
-        # plt.imshow((reduced_prototype[:,reduced_size[1],:]), plt.get_cmap('gray'), origin='lower')
-
-        ''' Plot reduced area boxes around best poi when and predicted poi'''
-
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
-        plt.autoscale(False)
-        plt.plot(self._target_poi[2], self._target_poi[0], marker='o', color='g')
-        plt.plot(ncc_poi[2], ncc_poi[0], marker='o', color='r')
-        plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
-        currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
-        ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
-        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[2]-reduced_size[2], max_ncc_poi_full[0]-reduced_size[0]), reduced_size[2]*2, reduced_size[0]*2, fill=None, edgecolor="red"))
-
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), origin='lower')
-        plt.autoscale(False)
-        plt.plot(self._target_poi[1], self._target_poi[0], marker='o', color='g')
-        plt.plot(ncc_poi[1], ncc_poi[0], marker='o', color='r')
-        plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
-        currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
-        ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
-        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[1]-reduced_size[1], max_ncc_poi_full[0]-reduced_size[0]), reduced_size[1]*2, reduced_size[0]*2, fill=None, edgecolor="red"))
-
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), origin='lower')
-        plt.autoscale(False)
-        plt.plot(self._target_poi[2], self._target_poi[1], marker='o', color='g')
-        plt.plot(ncc_poi[2], ncc_poi[1], marker='o', color='r')
-        plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
-        currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
-        ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
-        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[2]-reduced_size[2], max_ncc_poi_full[1]-reduced_size[1]), reduced_size[2]*2, reduced_size[2]*2, fill=None, edgecolor="red"))
-
-
-        # plt.subplot(212)
-        # #currentAxis = plt.gca()
-        # plt.imshow((prototype_data[poi_index][:,max_ncc_poi[1],:]), plt.get_cmap('gray'), origin='lower')
-        # #plt.plot(max_ncc_poi[2],max_ncc_poi[0], marker='o', color='b')
-        # #currentAxis.add_patch(Rectangle((max_ncc_poi[2]-reduced_size[2], max_ncc_poi[0]-reduced_size[0]), reduced_size[2]*2, reduced_size[0]*2, fill=None, edgecolor="blue"))
-
-        plt.show()
 
     def test_reduction(self, prototype_data, prototype_pois):
 
@@ -202,6 +139,7 @@ class Utils:
         reduced_fat = np.reshape(self._fat_data[reduced_mask], (2*self._reduced_size+1))
 
         return reduced_water, reduced_fat, reduced_mask, poi_index
+
 
     def train_reduction(self):
 
@@ -326,6 +264,97 @@ class Utils:
 
         return error
 
+    def plot_regression(self, regression):
+
+        reduced_size = (2*self._reduced_size+1)
+
+        #regression = regression/np.amax(regression)
+
+        min_pos = np.unravel_index(regression.argmin(), reduced_size)
+        regression_map = np.reshape(regression, reduced_size)
+
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((regression_map[:, min_pos[1], :]), plt.get_cmap('jet'), origin='lower')
+        plt.autoscale(False)
+        plt.plot(min_pos[2], min_pos[0], marker='o', color='g')
+        #plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
+
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((regression_map[:, : , min_pos[2]]), plt.get_cmap('jet'), origin='lower')
+        plt.autoscale(False)
+        plt.plot(min_pos[1], min_pos[0], marker='o', color='g')
+
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
+        plt.autoscale(False)
+        plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
+
+        plt.show()
+
+
+    def plot_reduced(self, reduced_target, ncc_poi, reg_poi):
+
+        reduced_size = self._reduced_size
+
+        # ''' Show reduced data in target'''    
+        # plt.figure()
+        # plt.frameon=False
+        # plt.autoscale(False)
+        # plt.imshow((reduced_target[:,self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+
+
+        # ''' Show reduced data in prototype'''
+        # plt.subplot(212)
+        # plt.imshow((reduced_prototype[:,reduced_size[1],:]), plt.get_cmap('gray'), origin='lower')
+
+        ''' Plot reduced area boxes around best poi when and predicted poi'''
+
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+        plt.autoscale(False)
+        plt.plot(self._target_poi[2], self._target_poi[0], marker='o', color='g')
+        plt.plot(ncc_poi[2], ncc_poi[0], marker='o', color='r')
+        plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
+        currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
+        ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[2]-reduced_size[2], max_ncc_poi_full[0]-reduced_size[0]), reduced_size[2]*2, reduced_size[0]*2, fill=None, edgecolor="red"))
+
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), origin='lower')
+        plt.autoscale(False)
+        plt.plot(self._target_poi[1], self._target_poi[0], marker='o', color='g')
+        plt.plot(ncc_poi[1], ncc_poi[0], marker='o', color='r')
+        plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
+        currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
+        ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[1]-reduced_size[1], max_ncc_poi_full[0]-reduced_size[0]), reduced_size[1]*2, reduced_size[0]*2, fill=None, edgecolor="red"))
+
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), origin='lower')
+        plt.autoscale(False)
+        plt.plot(self._target_poi[2], self._target_poi[1], marker='o', color='g')
+        plt.plot(ncc_poi[2], ncc_poi[1], marker='o', color='r')
+        plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
+        currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
+        ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
+        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[2]-reduced_size[2], max_ncc_poi_full[1]-reduced_size[1]), reduced_size[2]*2, reduced_size[2]*2, fill=None, edgecolor="red"))
+
+
+        # plt.subplot(212)
+        # #currentAxis = plt.gca()
+        # plt.imshow((prototype_data[poi_index][:,max_ncc_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+        # #plt.plot(max_ncc_poi[2],max_ncc_poi[0], marker='o', color='b')
+        # #currentAxis.add_patch(Rectangle((max_ncc_poi[2]-reduced_size[2], max_ncc_poi[0]-reduced_size[0]), reduced_size[2]*2, reduced_size[0]*2, fill=None, edgecolor="blue"))
+
+        plt.show()
+
+
 def load_prototypes(prototype_path, poi):
 
     ''' List with paths to all prototypes'''
@@ -351,3 +380,26 @@ def extract_weights(ground_truth):
 
     return weights
 
+def plot_importances(estimators, nbr_of_features):
+
+    ''' Extract feature importances '''
+    importances = estimators["Regression forest"].feature_importances_
+
+    ''' Get sorted indices of most important features'''
+    std = np.std([tree.feature_importances_ for tree in estimators["Regression forest"].estimators_], axis=0)
+    indices = np.argsort(importances)[::-1]
+
+    '''Print the feature ranking'''
+    print("Feature ranking:")
+
+    for f in range(nbr_of_features):
+        print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
+
+    ''' Plot the feature importances of the forest '''
+    plt.figure()
+    plt.title("Feature importances")
+    plt.bar(range(nbr_of_features), importances[indices],
+        color="r", yerr=std[indices], align="center")
+    plt.xticks(range(nbr_of_features), indices)
+    plt.xlim([-1, nbr_of_features])
+    plt.show()

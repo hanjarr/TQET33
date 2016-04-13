@@ -8,7 +8,7 @@ import numpy as np
 import json
 
 class Module:
-    with open("/home/hannes/code/trained/test17/parameters.json") as json_file:
+    with open("/home/hannes/code/git/parameters.json") as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -39,11 +39,12 @@ class Module:
         ''' Empty arrays for concatenating features '''
         selection_features, selection_ground_truth = np.array([]), np.array([])
 
+
         ''' Create feature object '''
         feature = Feature(Module.nbr_of_filters, Module.patch_size)
 
         ''' Generate filter bank '''
-        filter_bank, filter_parameters = feature.generate_haar()
+        filter_bank, filter_parameters = feature.generate_haar_()
 
         ''' Create regression forest class object '''
         forest = RegressionForest(Module.nbr_of_trees_select, Module.max_features_select, Module.bootstrap)
@@ -75,7 +76,7 @@ class Module:
         selection = forest.feature_selection(selection_features, selection_ground_truth, Module.selected_filters)
 
         ''' Extract best filters '''
-        filter_bank = filter_bank[selection,:,:]
+        filter_bank = [filter_bank[k] for k in selection]
         filter_parameters = [filter_parameters[i] for i in selection]
 
         np.save('filter_bank.npy',filter_bank)
@@ -156,9 +157,8 @@ class Module:
             ''' Extract testing ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
-
             ''' Create feature object '''
-            feature = Feature(Module.nbr_of_filters, Module.patch_size)
+            feature = Feature(Module.selected_filters, Module.patch_size)
 
             ''' Extract testing features '''
             water_features, fat_features = feature.feature_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
@@ -176,11 +176,14 @@ class Module:
 
             poi_diff = utils.error_measure(reg_poi)
             print(poi_diff)
+
+            ''' Plot the regression map '''
+            #utils.plot_regression(regression)
     
             poi_error.append(poi_diff)
             #ncc_error.append(ncc_diff)
 
-            utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
+            #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
 
 
             ncc_error = np.vstack([ncc_error, ncc_diff]) if ncc_error.size else ncc_diff

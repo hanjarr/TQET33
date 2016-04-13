@@ -18,11 +18,9 @@ class Feature:
         #start = time.time()
         #print("Feature extraction")
 
-        #filter_bank, parameters = self.generate_haar()
-        #param = list(filter_parameters)
-
         ''' Allocate memory for storing feature vectors ''' 
-        water_features = np.zeros((len(np.ravel(water_target)),filter_bank.shape[0]))
+        #water_features = np.zeros((len(np.ravel(water_target)), filter_bank[0].shape[0]))
+        water_features = np.zeros((len(np.ravel(water_target)), self._nbr_of_filters))
         fat_features = water_features.copy()
 
 
@@ -32,14 +30,27 @@ class Feature:
         #         extracted_features.append(derivative)
 
         # else:
+
         for ind, haar_filter in enumerate(filter_bank):
-            rep_filter = np.tile(haar_filter[None,:,:], ((filter_parameters[ind][0]),1,1))
+
+            first_cubical = haar_filter[0]
+            second_cubical = haar_filter[1]
+
+            rep_first = np.tile(first_cubical[None,:,:], ((filter_parameters[ind][0][0]),1,1))
+            rep_second = np.tile(second_cubical[None,:,:], ((filter_parameters[ind][1][0]),1,1))
 
             ''' Zero pad the Haar convolutional kernel '''
-            front_zeros = np.zeros((filter_parameters[ind][1], self._patch_size, self._patch_size))
-            back_zeros = np.zeros((filter_parameters[ind][2], self._patch_size, self._patch_size))
+            front_zeros = np.zeros((filter_parameters[ind][0][1], self._patch_size, self._patch_size))
+            back_zeros = np.zeros((filter_parameters[ind][0][2], self._patch_size, self._patch_size))
 
-            complete_filter = np.vstack((np.vstack((front_zeros,rep_filter)),back_zeros))
+            front_zeros_ = np.zeros((filter_parameters[ind][1][1], self._patch_size, self._patch_size))
+            back_zeros_ = np.zeros((filter_parameters[ind][1][2], self._patch_size, self._patch_size))
+
+            first_filter = np.vstack((np.vstack((front_zeros, rep_first)), back_zeros))
+            second_filter = np.vstack((np.vstack((front_zeros_, rep_second)), back_zeros_))
+
+            complete_filter = first_filter + second_filter
+
 
             ''' Convolve the water and fat signal with the filter bank'''
             water_conv = conv(water_target, complete_filter, mode='constant', cval=0.0)
@@ -61,6 +72,7 @@ class Feature:
 
         ''' Generate 2D-filters and 3D parameters '''
         for filt in range(0, self._nbr_of_filters):
+
             haar_size = [rand.randint(1, self._patch_size) for _ in range(0,3)]
             origin = [rand.randint(0, self._patch_size-haar_size[1]), rand.randint(0, self._patch_size-haar_size[2])]
             haar_bank[filt,origin[0]:origin[0] + haar_size[1], origin[1]:origin[1] + haar_size[2]] = 1/np.prod(haar_size)
@@ -73,4 +85,47 @@ class Feature:
         haar_parameters = list(zip(*[z_size, front_zeros, back_zeros]))
 
         return haar_bank, haar_parameters
+
+    def generate_haar_(self):
+        haar_bank = np.zeros([self._nbr_of_filters, self._patch_size, self._patch_size])
+        haar_bank_ = haar_bank.copy()
+
+        z_size, front_zeros, back_zeros = [], [], []
+        z_size_, front_zeros_, back_zeros_ = [], [], []
+
+        max_haar_size = self._patch_size - np.floor(self._patch_size/3)
+        min_haar_size = np.ceil(self._patch_size/3)
+
+
+        ''' Generate 2D-filters and 3D parameters '''
+        for filt in range(0, self._nbr_of_filters):
+    
+            ''' Randomize parameters for first cubical region '''
+            haar_size = [rand.randint(min_haar_size, max_haar_size) for _ in range(0,3)]
+            origin = [rand.randint(0, max_haar_size - haar_size[1]), rand.randint(0, max_haar_size - haar_size[2])]
+            haar_bank[filt,origin[0]:origin[0] + haar_size[1], origin[1]:origin[1] + haar_size[2]] = 1/np.prod(haar_size)
+
+            z_size.append(haar_size[0])
+            front_zeros.append(rand.randint(0, self._patch_size-z_size[filt]))
+            back_zeros.append(self._patch_size-(front_zeros[filt] + z_size[filt]))
+
+            ''' Randomize parameters for second cubical region '''
+            rand.shuffle(haar_size)
+            if rand.random() > 0.5:
+                origin = [rand.randint(0, max_haar_size - haar_size[1]), rand.randint(0, max_haar_size - haar_size[2])]
+                haar_bank_[filt,origin[0]:origin[0] + haar_size[1], origin[1]:origin[1] + haar_size[2]] = -1/np.prod(haar_size)
+
+            z_size_.append(haar_size[0])
+            front_zeros_.append(rand.randint(0, self._patch_size-z_size_[filt]))
+            back_zeros_.append(self._patch_size-(front_zeros_[filt] + z_size_[filt]))
+
+        ''' Zip filter parameters '''
+        first_haar = list(zip(*[z_size, front_zeros, back_zeros]))
+        second_haar = list(zip(*[z_size_, front_zeros_, back_zeros_]))
+
+        haar_parameters = list(zip(first_haar, second_haar))
+
+        filter_bank = list(zip(haar_bank, haar_bank_))
+
+        return filter_bank, haar_parameters
 
