@@ -12,15 +12,13 @@ def main():
     #filter_bank = np.load('/home/hannes/code/git/filter_bank.npy')
     #filter_parameters = np.load('/home/hannes/code/git/filter_parameters.npy')
 
-    #''' number of filters used'''
-    #nbr_of_filters = filter_bank.shape[0]
 
     estimators = Module.training(filter_bank, filter_parameters)
 
-    #sestimators = joblib.load('/home/hannes/code/git/RegressionForest.pkl') 
+    #estimators = joblib.load('/home/hannes/code/git/RegressionForest.pkl') 
 
-    #''' Plot the filter importances '''
-    #plot_importances(estimators, nbr_of_filters)
+    ''' Plot the filter importances '''
+    plot_importances(estimators)
 
 
     poi_error, ncc_error = Module.testing(estimators, filter_bank, filter_parameters)

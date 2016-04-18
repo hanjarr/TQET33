@@ -139,9 +139,7 @@ class Module:
 
         for target in Module.test_targets:
 
-            #target_path = '/moria/data/DB/' + Module.directory + target + '/wholebody_normalized_water_1_' + target +'.amra'
-            #prototype_path = '/home/hannes/mordor/hannes/DB/' + Module.directory + target + '/prototypes'
-            prototype_path = '/home/hannes/DB/' + Module.directory + target + '/prototypes'
+            prototype_path = '/media/hannes/localDrive/DB/' + Module.directory + target + '/prototypes'
 
             print(target)
 

@@ -15,8 +15,8 @@ class Feature:
 
     def feature_extraction(self, water_target, fat_target, filter_bank, filter_parameters):
 
-        #start = time.time()
-        #print("Feature extraction")
+        start = time.time()
+        print("Feature extraction")
 
         ''' Allocate memory for storing feature vectors ''' 
         #water_features = np.zeros((len(np.ravel(water_target)), filter_bank[0].shape[0]))
@@ -60,8 +60,8 @@ class Feature:
             #fat_features[:,ind] = np.ravel(fat_conv)
 
 
-        #end = time.time()
-        #print(end - start)
+        end = time.time()
+        print(end - start)
 
         return water_features, fat_features
 
