@@ -36,7 +36,7 @@ class RegressionForest:
         ''' Estimators to use '''
         ESTIMATORS = {
             "Regression forest": ExtraTreesRegressor(n_estimators= self._estimators, 
-                max_features=self._max_features, bootstrap=self._bootstrap, n_jobs = -1, oob_score=True)
+                max_features=self._max_features, bootstrap=self._bootstrap, n_jobs = -1)
         }
 
         trained_estimators = dict()
@@ -48,7 +48,7 @@ class RegressionForest:
         end = time.time()
         print(end - start)
 
-        print(trained_estimator.oob_score_)
+        #print(trained_estimator.oob_score_)
 
         return trained_estimators
 

@@ -5,6 +5,7 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Rectangle
 import time
 
@@ -258,11 +259,13 @@ class Utils:
 
         return poi_pos
 
-    def error_measure(self, estimated_poi):
-        poi_diff = abs(self._target_poi - estimated_poi)*self._target_voxel_size
-        error = np.sqrt(sum(poi_diff**2))
+    def error_measure(self, reg_poi, ncc_poi):
+        reg_voxel_diff = abs(self._target_poi - reg_poi)
+        ncc_voxel_diff = abs(self._target_poi - ncc_poi)
 
-        return error
+        reg_diff = np.sqrt(sum((reg_voxel_diff*self._target_voxel_size)**2))
+
+        return reg_voxel_diff, ncc_voxel_diff, reg_diff
 
     def plot_regression(self, regression):
 
@@ -277,6 +280,7 @@ class Utils:
         currentAxis = plt.gca()
         plt.imshow((regression_map[:, min_pos[1], :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
+        plt.colorbar()
         plt.plot(min_pos[2], min_pos[0], marker='o', color='g')
         #plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
 
@@ -284,12 +288,14 @@ class Utils:
         currentAxis = plt.gca()
         plt.imshow((regression_map[:, : , min_pos[2]]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
+        plt.colorbar()
         plt.plot(min_pos[1], min_pos[0], marker='o', color='g')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
         plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
+        plt.colorbar()
         plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
 
         plt.show()
@@ -321,7 +327,6 @@ class Utils:
         plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
-        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[2]-reduced_size[2], max_ncc_poi_full[0]-reduced_size[0]), reduced_size[2]*2, reduced_size[0]*2, fill=None, edgecolor="red"))
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
@@ -332,7 +337,6 @@ class Utils:
         plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
         ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
-        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[1]-reduced_size[1], max_ncc_poi_full[0]-reduced_size[0]), reduced_size[1]*2, reduced_size[0]*2, fill=None, edgecolor="red"))
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
@@ -343,14 +347,6 @@ class Utils:
         plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
-        #currentAxis.add_patch(Rectangle((max_ncc_poi_full[2]-reduced_size[2], max_ncc_poi_full[1]-reduced_size[1]), reduced_size[2]*2, reduced_size[2]*2, fill=None, edgecolor="red"))
-
-
-        # plt.subplot(212)
-        # #currentAxis = plt.gca()
-        # plt.imshow((prototype_data[poi_index][:,max_ncc_poi[1],:]), plt.get_cmap('gray'), origin='lower')
-        # #plt.plot(max_ncc_poi[2],max_ncc_poi[0], marker='o', color='b')
-        # #currentAxis.add_patch(Rectangle((max_ncc_poi[2]-reduced_size[2], max_ncc_poi[0]-reduced_size[0]), reduced_size[2]*2, reduced_size[0]*2, fill=None, edgecolor="blue"))
 
         plt.show()
 
@@ -405,3 +401,53 @@ def plot_importances(estimators):
     plt.xticks(range(30), indices)
     plt.xlim([-1, 30])
     plt.show()
+
+def plot_distribution(error, voxel_error):
+
+    reg_error = [error[ind][0] for ind in range(len(error))]
+    ncc_error = [error[ind][1] for ind in range(len(error))]
+
+    reg_voxel_error = np.sum(np.array([voxel_error[ind][0] for ind in range(len(voxel_error))]),axis=1)
+    ncc_voxel_error = np.sum(np.array([voxel_error[ind][1] for ind in range(len(voxel_error))]),axis=1)
+
+    reg_hist = np.histogram(reg_error, range(15))
+    ncc_hist = np.histogram(ncc_error, range(15))
+
+    reg_voxel_hist = np.histogram(reg_voxel_error, range(10))
+    ncc_voxel_hist = np.histogram(ncc_voxel_error, range(10))
+
+    hist_data = [(reg_hist, ncc_hist),(reg_voxel_hist,ncc_voxel_hist)]
+
+    for data in hist_data:
+
+        fig = plt.figure(frameon=False)
+        ax = fig.add_subplot(111,projection='3d')
+
+        ax.bar(data[0][1][:-1], data[0][0], zs=0, zdir='y', color='b', alpha=0.6)
+        ax.bar(data[1][1][:-1], data[1][0], zs=1, zdir='y', color='r', alpha=0.7)
+
+        plt.autoscale(False)
+
+
+        ax.set_xlabel('Deviation')
+        ax.set_ylabel('Reg vs ncc')
+        ax.set_zlabel('Frequency')
+        plt.grid(True)
+
+    plt.show()
+
+
+    #n, bins, patches = plt.hist(reg_error, np.arange(0,15), facecolor='blue', alpha=0.75)
+    #n, bins, patches = plt.hist(ncc_error, np.arange(0,15), facecolor='red', alpha=0.5)
+
+
+    # plt.figure()
+    # n, bins, patches = plt.hist(reg_voxel_error, np.arange(0,10), facecolor='blue', alpha=0.75)
+    # n, bins, patches = plt.hist(ncc_voxel_error, np.arange(0,10), facecolor='red', alpha=0.5)
+
+    # plt.title("Distribution")
+    # plt.xlabel("Voxel deviation in z-dir")
+    # plt.ylabel("Frequency")
+    # plt.axis([0, 10, 0, 30])
+    # plt.grid(True)
+    # plt.show()

@@ -13,23 +13,15 @@ class Feature:
         self._nbr_of_filters = nbr_of_filters
         self._patch_size = patch_size
 
-    def feature_extraction(self, water_target, fat_target, filter_bank, filter_parameters):
+    def haar_extraction(self, water_target, fat_target, filter_bank, filter_parameters):
 
         start = time.time()
         print("Feature extraction")
 
         ''' Allocate memory for storing feature vectors ''' 
-        #water_features = np.zeros((len(np.ravel(water_target)), filter_bank[0].shape[0]))
         water_features = np.zeros((len(np.ravel(water_target)), self._nbr_of_filters))
         fat_features = water_features.copy()
 
-
-        # if filter_type == 'Sobel':
-        #     for direction in range(2,-1,-1):
-        #         derivative = sobel(target, direction)
-        #         extracted_features.append(derivative)
-
-        # else:
 
         for ind, haar_filter in enumerate(filter_bank):
 
@@ -64,6 +56,15 @@ class Feature:
         print(end - start)
 
         return water_features, fat_features
+
+    def sobel_extraction(self, water_target, fat_target):
+
+        water_features = np.zeros((len(np.ravel(water_target)), 3))
+
+        for direction in range(2,-1,-1):
+            deriv = sobel(water_target, direction)
+            water_features[:,abs(direction-2)] = np.ravel(deriv)
+        return water_features
 
 
     def generate_haar(self):

@@ -8,7 +8,7 @@ import numpy as np
 import json
 
 class Module:
-    with open("/home/hannes/code/git/parameters.json") as json_file:
+    with open("/home/hannes/code/trained/RightFemur/test2/parameters.json") as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -62,7 +62,7 @@ class Module:
             ''' Extract ground truth '''
             #ground_truth = np.array(2*list(utils.extract_ground_truth(reduced_mask)))
             ground_truth = utils.extract_ground_truth(reduced_mask)
-            water_features, fat_features = feature.feature_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
+            water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
             ''' Using both water and fat signal'''
             #extracted_features = np.vstack([water_features, fat_features])
@@ -108,7 +108,7 @@ class Module:
             weights = extract_weights(ground_truth)
 
             ''' Extract features '''
-            water_features, fat_features = feature.feature_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
+            water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
             ''' Concatenate horizontally for using both water and fat (feature dimension)'''
             #extracted_features = np.hstack([water_features, fat_features])
@@ -135,7 +135,7 @@ class Module:
     def testing(estimators, filter_bank, filter_parameters):
 
         ''' Empty list for storing displacement from target POI'''
-        poi_error, ncc_error = [], np.array([]);
+        reg_error, ncc_error, reg_voxel_error, ncc_voxel_error = [], [], np.array([]), np.array([]);
 
         for target in Module.test_targets:
 
@@ -159,7 +159,7 @@ class Module:
             feature = Feature(Module.selected_filters, Module.patch_size)
 
             ''' Extract testing features '''
-            water_features, fat_features = feature.feature_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
+            water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
             ''' Concatenate horizontally for using both water and fat (feature dimension)'''
             #test_features = np.hstack([water_features, fat_features])
@@ -172,18 +172,31 @@ class Module:
             reg_poi = utils.estimate_poi_position(regression, reduced_mask)
             print(reg_poi)
 
-            poi_diff = utils.error_measure(reg_poi)
-            print(poi_diff)
+            reg_voxel_diff, ncc_voxel_diff, reg_diff = utils.error_measure(reg_poi, ncc_poi)
+            print(reg_diff)
 
             ''' Plot the regression map '''
             #utils.plot_regression(regression)
     
-            poi_error.append(poi_diff)
-            #ncc_error.append(ncc_diff)
+            reg_error.append(reg_diff)
+            ncc_error.append(ncc_diff)
 
             #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
 
+            reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
+            ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff
 
-            ncc_error = np.vstack([ncc_error, ncc_diff]) if ncc_error.size else ncc_diff
 
-        return poi_error, ncc_error
+        error = list(zip(reg_error,ncc_error))
+        voxel_error = list(zip(reg_voxel_error, ncc_voxel_error))
+
+        np.save('error.npy', error)
+        np.save('voxel_error.npy', voxel_error)
+
+        print(np.mean(reg_error))
+        print(np.std(reg_error))
+
+        print(np.mean(ncc_error))
+        print(np.std(ncc_error))
+
+        return error, voxel_error
