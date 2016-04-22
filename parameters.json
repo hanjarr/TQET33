@@ -28,7 +28,7 @@
 
   "directory": "0030/",
   "poi": "RightFemur",
-  "search_size": [25,20,20],
+  "search_size": [25,15,15],
   "nbr_of_filters": 10000,
   "selected_filters": 200,
   "patch_size": 7,
@@ -36,7 +36,7 @@
   "nbr_of_trees_select": 100,
   "nbr_of_trees": 60,
   "max_features_select": 1000,
-  "max_features": 50,
+  "max_features": 100,
   "bootstrap": true,
   "extension": 3
 }

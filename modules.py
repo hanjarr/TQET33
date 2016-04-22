@@ -8,7 +8,7 @@ import numpy as np
 import json
 
 class Module:
-    with open("/home/hannes/code/trained/RightFemur/test2/parameters.json") as json_file:
+    with open("/home/hannes/code/trained/LeftFemur/test23/parameters.json") as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -37,7 +37,7 @@ class Module:
     def pre_selection():
 
         ''' Empty arrays for concatenating features '''
-        selection_features, selection_ground_truth = np.array([]), np.array([])
+        selection_features, selection_ground_truth, selection_weights = np.array([]), np.array([]), np.array([])
 
 
         ''' Create feature object '''
@@ -64,6 +64,9 @@ class Module:
             ground_truth = utils.extract_ground_truth(reduced_mask)
             water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
+            #''' Extract weights '''
+            #weights = extract_weights(ground_truth)
+
             ''' Using both water and fat signal'''
             #extracted_features = np.vstack([water_features, fat_features])
 
@@ -71,9 +74,11 @@ class Module:
 
             selection_features = np.vstack([extracted_features, selection_features]) if selection_features.size else extracted_features
             selection_ground_truth = np.hstack([selection_ground_truth, ground_truth]) if selection_ground_truth.size else ground_truth
+            #selection_weights = np.hstack([selection_weights, weights]) if selection_weights.size else weights
+
 
         ''' Select best filters '''
-        selection = forest.feature_selection(selection_features, selection_ground_truth, Module.selected_filters)
+        selection = forest.feature_selection(selection_features, selection_ground_truth, Module.selected_filters)#, selection_weights)
 
         ''' Extract best filters '''
         filter_bank = [filter_bank[k] for k in selection]
@@ -104,8 +109,8 @@ class Module:
             ''' Extract ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
-            ''' Extract weights '''
-            weights = extract_weights(ground_truth)
+            #''' Extract weights '''
+            #weights = extract_weights(ground_truth)
 
             ''' Extract features '''
             water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
@@ -118,14 +123,14 @@ class Module:
             ''' Stack features, ground truth and weights'''
             train_features = np.vstack([train_features, extracted_features]) if train_features.size else extracted_features
             train_ground_truth = np.hstack([train_ground_truth, ground_truth]) if train_ground_truth.size else ground_truth
-            train_weights = np.hstack([train_weights, weights]) if train_weights.size else weights
+            #train_weights = np.hstack([train_weights, weights]) if train_weights.size else weights
 
 
         ''' Create regression forest class object '''
         forest = RegressionForest(Module.nbr_of_trees, Module.max_features, Module.bootstrap)
 
         ''' Generate trained forest '''
-        estimators = forest.generate_forest(train_features, train_ground_truth)
+        estimators = forest.generate_forest(train_features, train_ground_truth)#, train_weights)
 
         ''' Save forest to file'''
         joblib.dump(estimators, 'RegressionForest.pkl', compress=1)
@@ -176,12 +181,12 @@ class Module:
             print(reg_diff)
 
             ''' Plot the regression map '''
-            #utils.plot_regression(regression)
+            utils.plot_regression(regression)
     
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
 
-            #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
+            utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff

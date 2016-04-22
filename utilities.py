@@ -35,7 +35,7 @@ class Utils:
         self._search_size = search_size
         self._reduced_size = np.round(search_size/np.array(self._target_voxel_size)).astype(int)
 
-        ''' Chosen_poi ''' 
+        ''' Selected poi ''' 
         self._poi = poi
 
         ''' Extension for correlation '''
@@ -305,18 +305,23 @@ class Utils:
 
         reduced_size = self._reduced_size
 
-        # ''' Show reduced data in target'''    
-        # plt.figure()
-        # plt.frameon=False
+        # pos = (ncc_poi[2]+3, ncc_poi[0]+3)
+
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
         # plt.autoscale(False)
-        # plt.imshow((reduced_target[:,self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+        # plt.plot(pos[0], pos[1], marker='o', color='r')
+        # currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
+        # ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
 
+        # currentAxis.add_patch(Rectangle((pos[0]-5,\
+        # pos[1]-5), 3, 5, fill=None, edgecolor="green"))
 
-        # ''' Show reduced data in prototype'''
-        # plt.subplot(212)
-        # plt.imshow((reduced_prototype[:,reduced_size[1],:]), plt.get_cmap('gray'), origin='lower')
+        # currentAxis.add_patch(Rectangle((pos[0]+2,\
+        # pos[1]+2), 5, 3, fill=None, edgecolor="red"))
 
-        ''' Plot reduced area boxes around best poi when and predicted poi'''
+        ''' Plot reduced area boxes around best poi and predicted poi'''
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
@@ -372,7 +377,7 @@ def load_prototypes(prototype_path, poi):
     return prototype_data, prototype_pois
 
 def extract_weights(ground_truth):
-    weights = 1-0.1*ground_truth/(np.amax(ground_truth))
+    weights = 1-0.2*ground_truth/(np.amax(ground_truth))
 
     return weights
 
