@@ -45,7 +45,7 @@ class Feature:
 
 
             ''' Convolve the water and fat signal with the filter bank'''
-            water_conv = conv(water_target, complete_filter, mode='constant', cval=0.0)
+            water_conv = conv(water_target, complete_filter, mode='reflect', cval=0.0)
             #fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
 
             water_features[:,ind] = np.ravel(water_conv)
@@ -94,8 +94,8 @@ class Feature:
         z_size, front_zeros, back_zeros = [], [], []
         z_size_, front_zeros_, back_zeros_ = [], [], []
 
-        max_haar_size = self._patch_size - np.floor(self._patch_size/3)
-        min_haar_size = np.ceil(self._patch_size/3)
+        max_haar_size = self._patch_size
+        min_haar_size = 2
 
 
         ''' Generate 2D-filters and 3D parameters '''

@@ -1,5 +1,5 @@
 from utilities import Utils
-from utilities import load_prototypes, extract_weights
+from utilities import extract_weights
 from feature_extraction import Feature
 from forest_regression import RegressionForest
 from forest_regression import run_forest
@@ -8,7 +8,7 @@ import numpy as np
 import json
 
 class Module:
-    with open("/home/hannes/code/trained/LeftFemur/test23/parameters.json") as json_file:
+    with open("/home/hannes/code/git/parameters.json") as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -148,11 +148,11 @@ class Module:
 
             print(target)
 
-            ''' Load prototype data and POI positions'''
-            prototype_data, prototype_pois = load_prototypes(prototype_path, Module.poi)
-
             ''' Create utils class object '''
             utils = Utils(Module.directory, target, Module.search_size, Module.extension, Module.poi)
+
+            ''' Load prototype data and POI positions'''
+            prototype_data, prototype_pois = utils.load_prototypes(prototype_path)
 
             ''' Init POI as just the ground truth + noise to reduce training time'''
             reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
@@ -181,12 +181,12 @@ class Module:
             print(reg_diff)
 
             ''' Plot the regression map '''
-            utils.plot_regression(regression)
+            #utils.plot_regression(regression)
     
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
 
-            utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
+            #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff

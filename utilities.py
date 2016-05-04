@@ -45,7 +45,6 @@ class Utils:
     def init_poi(self, prototype_data, prototype_pois):
         
         ''' Extract best poi according to ncc and the reduced data space'''    
-        #reduced_target, reduced_prototype, reduced_mask, poi_index = self.search_reduction(prototype_data, prototype_pois)
         reduced_water, reduced_fat, reduced_mask, poi_index = self.test_reduction(prototype_data, prototype_pois)
 
 
@@ -151,7 +150,7 @@ class Utils:
             Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
 
         reduced_size = self._reduced_size
-        poi = self._target_poi + np.round(abs(np.random.normal(1, 2, 3))).astype(int)
+        poi = self._target_poi + np.round(abs(np.random.normal(2, 1, 3))).astype(int)
 
         z_lower = poi[0]-reduced_size[0]
         z_upper = poi[0]+reduced_size[0]+1
@@ -271,8 +270,6 @@ class Utils:
 
         reduced_size = (2*self._reduced_size+1)
 
-        #regression = regression/np.amax(regression)
-
         min_pos = np.unravel_index(regression.argmin(), reduced_size)
         regression_map = np.reshape(regression, reduced_size)
 
@@ -356,25 +353,25 @@ class Utils:
         plt.show()
 
 
-def load_prototypes(prototype_path, poi):
+    def load_prototypes(self, prototype_path):
 
-    ''' List with paths to all prototypes'''
-    prototype_paths = [join(prototype_path, f) for f in listdir(prototype_path) if isfile(join(prototype_path, f))]
+        ''' List with paths to all prototypes'''
+        prototype_paths = [join(prototype_path, f) for f in listdir(prototype_path) if isfile(join(prototype_path, f))]
 
-    ''' Init empty lists for prototype signals and pois'''
-    prototypes, prototype_pois = [], []
-
-
-    ''' Get poi positions from prototypes'''
-    for index, prototype in enumerate(prototype_paths):
-        prototypes.append(af.parse(prototype))
-        prototype_pois.append(prototypes[index].get_poi(poi))
-
-    ''' Extract prototype data as numpy arrays'''
-    prototype_data = [prototype.data for prototype in prototypes]
+        ''' Init empty lists for prototype signals and pois'''
+        prototypes, prototype_pois = [], []
 
 
-    return prototype_data, prototype_pois
+        ''' Get poi positions from prototypes'''
+        for index, prototype in enumerate(prototype_paths):
+            prototypes.append(af.parse(prototype))
+            prototype_pois.append(prototypes[index].get_poi(self._poi))
+
+        ''' Extract prototype data as numpy arrays'''
+        prototype_data = [prototype.data for prototype in prototypes]
+
+
+        return prototype_data, prototype_pois
 
 def extract_weights(ground_truth):
     weights = 1-0.2*ground_truth/(np.amax(ground_truth))
@@ -440,19 +437,3 @@ def plot_distribution(error, voxel_error):
         plt.grid(True)
 
     plt.show()
-
-
-    #n, bins, patches = plt.hist(reg_error, np.arange(0,15), facecolor='blue', alpha=0.75)
-    #n, bins, patches = plt.hist(ncc_error, np.arange(0,15), facecolor='red', alpha=0.5)
-
-
-    # plt.figure()
-    # n, bins, patches = plt.hist(reg_voxel_error, np.arange(0,10), facecolor='blue', alpha=0.75)
-    # n, bins, patches = plt.hist(ncc_voxel_error, np.arange(0,10), facecolor='red', alpha=0.5)
-
-    # plt.title("Distribution")
-    # plt.xlabel("Voxel deviation in z-dir")
-    # plt.ylabel("Frequency")
-    # plt.axis([0, 10, 0, 30])
-    # plt.grid(True)
-    # plt.show()

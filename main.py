@@ -9,12 +9,12 @@ def main():
     ''' Pre selection of filters '''
     #filter_bank, filter_parameters = Module.pre_selection()
 
-    filter_bank = np.load('/home/hannes/code/trained/LeftFemur/test23/filter_bank.npy')
-    filter_parameters = np.load('/home/hannes/code/trained/LeftFemur/test23/filter_parameters.npy')
+    filter_bank = np.load('/home/hannes/code/git/filter_bank.npy')
+    filter_parameters = np.load('/home/hannes/code/git/filter_parameters.npy')
 
-    #estimators = Module.training(filter_bank, filter_parameters)
+    estimators = Module.training(filter_bank, filter_parameters)
 
-    estimators = joblib.load('/home/hannes/code/trained/LeftFemur/test23/RegressionForest.pkl') 
+    #estimators = joblib.load('/home/hannes/code/git/RegressionForest.pkl') 
 
     ''' Plot the filter importances '''
     #plot_importances(estimators)

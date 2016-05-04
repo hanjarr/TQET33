@@ -27,14 +27,14 @@
    "00174","001D0","0022E","0028F","002EB","00348","003A5","00402"],
 
   "directory": "0030/",
-  "poi": "RightFemur",
+  "poi": "LeftFemur",
   "search_size": [22,22,22],
   "nbr_of_filters": 10000,
   "selected_filters": 200,
   "patch_size": 7,
 
   "nbr_of_trees_select": 100,
-  "nbr_of_trees": 60,
+  "nbr_of_trees": 50,
   "max_features_select": 1000,
   "max_features": 100,
   "bootstrap": true,
