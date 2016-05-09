@@ -8,7 +8,8 @@ import numpy as np
 import json
 
 class Module:
-    with open("/home/hannes/code/git/parameters.json") as json_file:
+
+    with open("/home/hannes/code/git/multivariate/parameters.json") as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -34,10 +35,12 @@ class Module:
     ''' Search extension for cross correlation''' 
     extension = json_data.get('extension')
 
+    #np.set_printoptions(threshold=np.nan)
+
     def pre_selection():
 
         ''' Empty arrays for concatenating features '''
-        selection_features, selection_ground_truth, selection_weights = np.array([]), np.array([]), np.array([])
+        selection_features, ground_truth_z, ground_truth_y, ground_truth_x = np.array([]), np.array([]), np.array([]), np.array([])
 
 
         ''' Create feature object '''
@@ -45,6 +48,7 @@ class Module:
 
         ''' Generate filter bank '''
         filter_bank, filter_parameters = feature.generate_haar_()
+
 
         ''' Create regression forest class object '''
         forest = RegressionForest(Module.nbr_of_trees_select, Module.max_features_select, Module.bootstrap)
@@ -59,42 +63,44 @@ class Module:
             ''' Extract reduced data from fat and water signal'''
             reduced_water, reduced_fat, reduced_mask = utils.train_reduction()
 
-            ''' Extract ground truth '''
-            #ground_truth = np.array(2*list(utils.extract_ground_truth(reduced_mask)))
+
+            ''' Extract ground truth and features from filters'''
             ground_truth = utils.extract_ground_truth(reduced_mask)
-
-            print(np.shape(ground_truth))
-            water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
-
-            #''' Extract weights '''
-            #weights = extract_weights(ground_truth)
-
-            ''' Using both water and fat signal'''
-            #extracted_features = np.vstack([water_features, fat_features])
-
-            extracted_features = water_features
+            extracted_features = feature.haar_extraction(reduced_water, reduced_fat, [filter_bank,], [filter_parameters,])
+            extracted_features = extracted_features[0]
 
             selection_features = np.vstack([extracted_features, selection_features]) if selection_features.size else extracted_features
-            selection_ground_truth = np.hstack([selection_ground_truth, ground_truth]) if selection_ground_truth.size else ground_truth
-            #selection_weights = np.hstack([selection_weights, weights]) if selection_weights.size else weights
 
+            ground_truth_z = np.hstack([ground_truth_z, ground_truth[0]]) if ground_truth_z.size else ground_truth[0]
+            ground_truth_y = np.hstack([ground_truth_y, ground_truth[1]]) if ground_truth_y.size else ground_truth[1]
+            ground_truth_x = np.hstack([ground_truth_x, ground_truth[2]]) if ground_truth_x.size else ground_truth[2]
 
-        ''' Select best filters '''
-        selection = forest.feature_selection(selection_features, selection_ground_truth, Module.selected_filters)#, selection_weights)
+        selection_ground_truth = [ground_truth_z, ground_truth_y, ground_truth_x]
 
-        ''' Extract best filters '''
-        filter_bank = [filter_bank[k] for k in selection]
-        filter_parameters = [filter_parameters[i] for i in selection]
+        ''' Select best filters according to feature importance measure'''
+        output_filters, output_parameters = [], []
 
-        np.save('filter_bank.npy',filter_bank)
-        np.save('filter_parameters', filter_parameters)
+        for ind, ground_truth in enumerate(selection_ground_truth):
 
-        return filter_bank, filter_parameters
+            selection = forest.feature_selection(selection_features, ground_truth, Module.selected_filters)
 
-    def training(filter_bank, filter_parameters):
+            ''' Extract best filters '''
+            filters = [filter_bank[k] for k in selection]
+            parameters = [filter_parameters[i] for i in selection]
+
+            np.save('filter_bank_' + str(ind) + '.npy', filters)
+            np.save('filter_parameters_' + str(ind) + '.npy', parameters)
+
+            output_filters.append(filters)
+            output_parameters.append(parameters)
+
+        return output_filters, output_parameters
+
+    def training(filter_banks, filter_parameters):
 
         ''' Empty arrays for concatenating features '''
-        train_features, train_ground_truth, train_weights = np.array([]), np.array([]), np.array([])
+        train_features_z, train_features_y, train_features_x, ground_truth_z, ground_truth_y, ground_truth_x = \
+        np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 
         ''' Create feature object '''
         feature = Feature(Module.selected_filters, Module.patch_size)
@@ -111,35 +117,41 @@ class Module:
             ''' Extract ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
-            #''' Extract weights '''
-            #weights = extract_weights(ground_truth)
-
             ''' Extract features '''
-            water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
+            extracted_features = feature.haar_extraction(reduced_water, reduced_fat, filter_banks, filter_parameters)
 
-            ''' Concatenate horizontally for using both water and fat (feature dimension)'''
-            #extracted_features = np.hstack([water_features, fat_features])
+            ''' Stack features, ground truth'''
+            train_features_z = np.vstack([train_features_z, extracted_features[0]]) if train_features_z.size else extracted_features[0]
+            train_features_y = np.vstack([train_features_y, extracted_features[1]]) if train_features_y.size else extracted_features[1]
+            train_features_x = np.vstack([train_features_x, extracted_features[2]]) if train_features_x.size else extracted_features[2]
 
-            extracted_features = water_features
+            ground_truth_z = np.hstack([ground_truth_z, ground_truth[0]]) if ground_truth_z.size else ground_truth[0]
+            ground_truth_y = np.hstack([ground_truth_y, ground_truth[1]]) if ground_truth_y.size else ground_truth[1]
+            ground_truth_x = np.hstack([ground_truth_x, ground_truth[2]]) if ground_truth_x.size else ground_truth[2]
 
-            ''' Stack features, ground truth and weights'''
-            train_features = np.vstack([train_features, extracted_features]) if train_features.size else extracted_features
-            train_ground_truth = np.hstack([train_ground_truth, ground_truth]) if train_ground_truth.size else ground_truth
-            #train_weights = np.hstack([train_weights, weights]) if train_weights.size else weights
+        ''' Store ground truth and features in lists'''
+        train_ground_truth = [ground_truth_z, ground_truth_y, ground_truth_x]
+        train_features = [train_features_z, train_features_y, train_features_x]
 
+        ''' Empty list for trained forest estimators, one for each orientation'''
+        estimators = []
 
         ''' Create regression forest class object '''
         forest = RegressionForest(Module.nbr_of_trees, Module.max_features, Module.bootstrap)
 
-        ''' Generate trained forest '''
-        estimators = forest.generate_forest(train_features, train_ground_truth)#, train_weights)
+        for ind, features in enumerate(train_features):
 
-        ''' Save forest to file'''
-        joblib.dump(estimators, 'RegressionForest.pkl', compress=1)
+            ''' Generate trained forest '''
+            estimator = forest.generate_forest(features, train_ground_truth[ind])
+
+            ''' Save forest estimator to file'''
+            joblib.dump(estimator, 'RegressionForest_' + str(ind) + '.pkl', compress=1)
+
+            estimators.append(estimator)
 
         return estimators
 
-    def testing(estimators, filter_bank, filter_parameters):
+    def testing(estimators, filter_banks, filter_parameters):
 
         ''' Empty list for storing displacement from target POI'''
         reg_error, ncc_error, reg_voxel_error, ncc_voxel_error = [], [], np.array([]), np.array([]);
@@ -159,31 +171,31 @@ class Module:
             ''' Init POI as just the ground truth + noise to reduce training time'''
             reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
 
-            ''' Extract testing ground truth '''
-            ground_truth = utils.extract_ground_truth(reduced_mask)
+            ''' Extract testing grids'''
+            position_grids = utils.extract_grids(reduced_mask)
 
             ''' Create feature object '''
             feature = Feature(Module.selected_filters, Module.patch_size)
 
             ''' Extract testing features '''
-            water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
-
-            ''' Concatenate horizontally for using both water and fat (feature dimension)'''
-            #test_features = np.hstack([water_features, fat_features])
-
-            test_features = water_features
+            test_features = feature.haar_extraction(reduced_water, reduced_fat, filter_banks, filter_parameters)
 
             ''' Run test data through forest '''
-            regression = run_forest(estimators, test_features)
+            regressions = []
+            for estimator, features in zip(estimators, test_features):
 
-            reg_poi = utils.estimate_poi_position(regression, reduced_mask)
+                regression = run_forest(estimator, features)
+                regression = [int(round(n, 0)) for n in regression]
+
+                regressions.append(regression)
+
+            reg_poi = utils.regression_voting(regressions, position_grids)
             print(reg_poi)
 
             reg_voxel_diff, ncc_voxel_diff, reg_diff = utils.error_measure(reg_poi, ncc_poi)
             print(reg_diff)
 
             ''' Plot the regression map '''
-            #utils.plot_regression(regression)
     
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)

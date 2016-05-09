@@ -30,6 +30,26 @@ class RegressionForest:
 
         return selection_indices
 
+    def feature_selection_2(self, X, y):
+        scores = defaultdict(list)
+ 
+        #crossvalidate the scores on a number of different random splits of the data
+        for train_idx, test_idx in ShuffleSplit(len(X), 100, .3):
+            X_train, X_test = X[train_idx], X[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
+
+            estimator = self.generate_forest(X_train, y_train)
+            acc = r2_score(Y_test, rf.predict(X_test))
+
+            for i in range(X.shape[1]):
+                X_t = X_test.copy()
+                np.random.shuffle(X_t[:, i])
+                shuff_acc = r2_score(Y_test, rf.predict(X_t))
+                scores[names[i]].append((acc-shuff_acc)/acc)
+
+            print("Features sorted by their score:")
+            print(sorted([(round(np.mean(score), 4), feat) for
+              feat, score in scores.items()], reverse=True))
 
     def generate_forest(self, X_train, y_train):
 

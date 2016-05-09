@@ -7,10 +7,10 @@ import numpy as np
 def main():
 
     ''' Pre selection of filters '''
-    #filter_bank, filter_parameters = Module.pre_selection()
+    filter_bank, filter_parameters = Module.pre_selection()
 
-    filter_bank = np.load('/home/hannes/code/git/filter_bank.npy')
-    filter_parameters = np.load('/home/hannes/code/git/filter_parameters.npy')
+    #filter_bank = np.load('/home/hannes/code/git/filter_bank.npy')
+    #filter_parameters = np.load('/home/hannes/code/git/filter_parameters.npy')
 
     estimators = Module.training(filter_bank, filter_parameters)
 
