@@ -65,12 +65,14 @@ class Feature:
 
     def sobel_extraction(self, water_target, fat_target):
 
-        water_features = np.zeros((len(np.ravel(water_target)), 3))
+        water_features = np.zeros((water_target.shape))
+        fat_features = water_features.copy()
 
         for direction in range(2,-1,-1):
             deriv = sobel(water_target, direction)
-            water_features[:,abs(direction-2)] = np.ravel(deriv)
-        return water_features
+            water_features = water_features + deriv**2
+        water_features = np.sqrt(water_features)
+        return water_features, fat_features
 
 
     def generate_haar(self):

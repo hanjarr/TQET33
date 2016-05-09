@@ -47,7 +47,6 @@ class Utils:
         ''' Extract best poi according to ncc and the reduced data space'''    
         reduced_water, reduced_fat, reduced_mask, poi_index = self.test_reduction(prototype_data, prototype_pois)
 
-
         ''' Best poi according to highest ncc measure'''
         ncc_poi = prototype_pois[poi_index]
 
@@ -98,16 +97,14 @@ class Utils:
         ''' Calculate ncc between reduced target and reduced prototype space. 
             Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
 
-        reduced_size = self._reduced_size
-
         for ind, poi in enumerate(prototype_pois):
 
-            z_lower = poi[0]-reduced_size[0]
-            z_upper = poi[0]+reduced_size[0]+1
-            y_lower = poi[1]-reduced_size[1]
-            y_upper = poi[1]+reduced_size[1]+1
-            x_lower = poi[2]-reduced_size[2]
-            x_upper = poi[2]+reduced_size[2]+1
+            z_lower = poi[0] - self._reduced_size[0]
+            z_upper = poi[0] + self._reduced_size[0]+1
+            y_lower = poi[1] - self._reduced_size[1]
+            y_upper = poi[1] + self._reduced_size[1]+1
+            x_lower = poi[2] - self._reduced_size[2]
+            x_upper = poi[2] + self._reduced_size[2]+1
 
             prototype = prototype_data[ind]
 
@@ -148,12 +145,12 @@ class Utils:
         reduced_size = self._reduced_size
         poi = self._target_poi + np.round(abs(np.random.normal(2, 1, 3))).astype(int)
 
-        z_lower = poi[0]-reduced_size[0]
-        z_upper = poi[0]+reduced_size[0]+1
-        y_lower = poi[1]-reduced_size[1]
-        y_upper = poi[1]+reduced_size[1]+1
-        x_lower = poi[2]-reduced_size[2]
-        x_upper = poi[2]+reduced_size[2]+1
+        z_lower = poi[0] - self._reduced_size[0]
+        z_upper = poi[0] + self._reduced_size[0]+1
+        y_lower = poi[1] - self._reduced_size[1]
+        y_upper = poi[1] + self._reduced_size[1]+1
+        x_lower = poi[2] - self._reduced_size[2]
+        x_upper = poi[2] + self._reduced_size[2]+1
 
         ''' Extract reduced space from prototype and target'''
         reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
