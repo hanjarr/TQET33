@@ -420,11 +420,11 @@ def plot_distribution(error, voxel_error):
     reg_voxel_error = np.sum(np.array([voxel_error[ind][0] for ind in range(len(voxel_error))]),axis=1)
     ncc_voxel_error = np.sum(np.array([voxel_error[ind][1] for ind in range(len(voxel_error))]),axis=1)
 
-    reg_hist = np.histogram(reg_error, range(15))
-    ncc_hist = np.histogram(ncc_error, range(15))
+    reg_hist = np.histogram(reg_error, range(np.amax(reg_error).astype(int)))
+    ncc_hist = np.histogram(ncc_error, range(np.amax(ncc_error).astype(int)))
 
-    reg_voxel_hist = np.histogram(reg_voxel_error, range(10))
-    ncc_voxel_hist = np.histogram(ncc_voxel_error, range(10))
+    reg_voxel_hist = np.histogram(reg_voxel_error, range(np.amax(reg_voxel_error).astype(int)))
+    ncc_voxel_hist = np.histogram(ncc_voxel_error, range(np.amax(ncc_voxel_error).astype(int)))
 
     hist_data = [(reg_hist, ncc_hist),(reg_voxel_hist,ncc_voxel_hist)]
 

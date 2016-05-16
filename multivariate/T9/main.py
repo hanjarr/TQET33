@@ -2,12 +2,16 @@ from modules import Module
 from utilities import plot_importances, plot_distribution
 from sklearn.externals import joblib
 import numpy as np
+import glob, os
+
 
 
 def main():
 
     ''' Choose parameter file'''
-    parameter_file = "/home/hannes/code/git/multivariate/parameters.json"
+    parameter_file = os.getcwd() + '/' + str(glob.glob("*.json")[0])
+
+    #parameter_file = "/home/hannes/code/git/multivariate/parameters.json"
 
     ''' Create module object '''
     module = Module(parameter_file)
