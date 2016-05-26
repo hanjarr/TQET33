@@ -28,6 +28,7 @@ class Module:
         self._nbr_of_trees_select = json_data['nbr_of_trees_select']
         self._nbr_of_trees = json_data['nbr_of_trees']
         self._bootstrap = json_data['bootstrap']
+        self._oob_score = json_data['oob_score']
 
         self._poi = json_data.get('poi')
         self._extension = json_data.get('extension')
@@ -44,7 +45,7 @@ class Module:
         filter_bank, filter_parameters = feature.generate_haar_()
 
         ''' Create regression forest class object '''
-        forest = RegressionForest(self._nbr_of_trees_select, self._max_features_select, self._bootstrap)
+        forest = RegressionForest(self._nbr_of_trees_select, self._max_features_select, self._bootstrap, self._oob_score)
 
         ''' Extract data for filter selection'''
         for target in self._selection_targets:
@@ -117,6 +118,16 @@ class Module:
             ''' Extract features'''
             extracted_features = feature.haar_extraction(sobel_water, sobel_fat, filter_banks, filter_parameters)
 
+            ''' Positions in the reduced space'''
+            position_grids = utils.extract_grids(reduced_mask)
+
+            '''Extract T9 features'''
+            T9_features = utils.extract_T9_features(position_grids)
+
+            ''' Add T9 features to extracted features'''
+            for dim in range(len(extracted_features)):
+                extracted_features[dim] = np.hstack([extracted_features[dim], T9_features])
+
             ''' Stack features, ground truth'''
             train_features_z = np.vstack([train_features_z, extracted_features[0]]) if train_features_z.size else extracted_features[0]
             train_features_y = np.vstack([train_features_y, extracted_features[1]]) if train_features_y.size else extracted_features[1]
@@ -134,7 +145,7 @@ class Module:
         estimators = []
 
         ''' Create regression forest class object '''
-        forest = RegressionForest(self._nbr_of_trees, self._max_features, self._bootstrap)
+        forest = RegressionForest(self._nbr_of_trees, self._max_features, self._bootstrap, self._oob_score)
 
         for ind, features in enumerate(train_features):
 
@@ -176,8 +187,15 @@ class Module:
             ''' Extract testing grids'''
             position_grids = utils.extract_grids(reduced_mask)
 
+            '''Extract T9 features'''
+            T9_features = utils.extract_T9_features(position_grids)
+
             ''' Extract testing features '''
             test_features = feature.haar_extraction(sobel_water, sobel_fat, filter_banks, filter_parameters)
+
+            ''' Add T9 features to extracted features'''
+            for dim in range(len(test_features)):
+                test_features[dim] = np.hstack([test_features[dim], T9_features]) 
 
             ''' Run test data through forest '''
             regressions = []

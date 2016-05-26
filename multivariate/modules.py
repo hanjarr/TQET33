@@ -184,7 +184,7 @@ class Module:
             for estimator, features in zip(estimators, test_features):
 
                 regression = run_forest(estimator, features)
-                regression = [int(round(n, 0)) for n in regression]
+                regression = np.round(regression).astype(int)
 
                 regressions.append(regression)
 
@@ -199,7 +199,7 @@ class Module:
             ncc_error.append(ncc_diff)
 
             ''' Plot the regression map '''
-            #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
+            utils.plot_multi_regression(regressions)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff

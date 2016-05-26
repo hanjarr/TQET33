@@ -59,7 +59,7 @@ class RegressionForest:
         ''' Estimators to use '''
         ESTIMATORS = {
             "Regression forest": ExtraTreesRegressor(n_estimators = self._estimators, 
-                max_features = self._max_features, bootstrap = self._bootstrap, n_jobs = -1, oob_score = True)
+                max_features = self._max_features, bootstrap = self._bootstrap, n_jobs = 10, oob_score = True)
         }
 
         trained_estimators = dict()

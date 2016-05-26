@@ -9,18 +9,27 @@ import glob, os
 def main():
 
     ''' Choose parameter file'''
-    parameter_file = os.getcwd() + '/' + str(glob.glob("*.json")[0])
+    #parameter_file = os.getcwd() + '/' + str(glob.glob("*.json")[0])
 
-    #parameter_file = "/home/hannes/code/git/multivariate/parameters.json"
+    parameter_file = "/home/hannes/code/git/multivariate/T9/parameters.json"
 
     ''' Create module object '''
     module = Module(parameter_file)
 
     ''' Pre selection of filters '''
-    filter_banks, filter_parameters = module.pre_selection()
+    #filter_banks, filter_parameters = module.pre_selection()
 
-    #filter_bank = np.load('/home/hannes/code/trained/LeftFemur/test23/filter_bank.npy')
-    #filter_parameters = np.load('/home/hannes/code/trained/LeftFemur/test23/filter_parameters.npy')
+    filter_bank_z = np.load('/home/hannes/code/trained/multivariate/T91/filter_bank_0.npy')
+    filter_bank_y = np.load('/home/hannes/code/trained/multivariate/T91/filter_bank_1.npy')
+    filter_bank_x = np.load('/home/hannes/code/trained/multivariate/T91/filter_bank_2.npy')
+
+    filter_parameter_z = np.load('/home/hannes/code/trained/multivariate/T91/filter_parameters_0.npy')
+    filter_parameter_y = np.load('/home/hannes/code/trained/multivariate/T91/filter_parameters_1.npy')
+    filter_parameter_x = np.load('/home/hannes/code/trained/multivariate/T91/filter_parameters_2.npy')
+
+    filter_banks = [filter_bank_z, filter_bank_y, filter_bank_x]
+    filter_parameters = [filter_parameter_z, filter_parameter_y, filter_parameter_x]
+
 
     estimators = module.training(filter_banks, filter_parameters)
 

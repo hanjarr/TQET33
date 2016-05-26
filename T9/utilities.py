@@ -26,6 +26,7 @@ class Utils:
 
         ''' Size of target data'''
         self._target_size = self._water_data.shape
+        self._target_length = self._water_target.patient_size
 
         ''' Target poi ground truth'''
         self._target_poi = np.array(self._water_target.get_poi(poi))
@@ -84,6 +85,39 @@ class Utils:
         return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
 
 
+    def train_reduction(self):
+
+        ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
+        reduced_mask = np.zeros((self._target_size), dtype = bool)
+
+        ''' Calculate ncc between reduced target and reduced prototype space. 
+            Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
+
+        reduced_size = self._reduced_size
+        poi = self._target_poi + np.round(abs(np.random.normal(2, 1, 3))).astype(int)
+
+        z_lower = poi[0] - self._reduced_size[0]
+        z_upper = poi[0] + self._reduced_size[0]+1
+        y_lower = poi[1] - self._reduced_size[1]
+        y_upper = poi[1] + self._reduced_size[1]+1
+        x_lower = poi[2] - self._reduced_size[2]
+        x_upper = poi[2] + self._reduced_size[2]+1
+
+        ''' Extract reduced space from prototype and target'''
+        reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+        reduced_fat = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+
+
+        ''' Create binary mask of the reduced space'''
+        reduced_mask_copy = reduced_mask.copy()
+        reduced_mask[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
+
+        print('\n'+'Ground truth:' )
+        print(self._target_poi)
+
+        return reduced_water, reduced_fat, reduced_mask
+
+
     def test_reduction(self, prototype_data, prototype_pois):
 
         ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
@@ -130,39 +164,6 @@ class Utils:
         return reduced_water, reduced_fat, reduced_mask, poi_index
 
 
-    def train_reduction(self):
-
-        ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
-        reduced_mask = np.zeros((self._target_size), dtype = bool)
-
-        ''' Calculate ncc between reduced target and reduced prototype space. 
-            Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
-
-        reduced_size = self._reduced_size
-        poi = self._target_poi + np.round(abs(np.random.normal(2, 1, 3))).astype(int)
-
-        z_lower = poi[0] - self._reduced_size[0]
-        z_upper = poi[0] + self._reduced_size[0]+1
-        y_lower = poi[1] - self._reduced_size[1]
-        y_upper = poi[1] + self._reduced_size[1]+1
-        x_lower = poi[2] - self._reduced_size[2]
-        x_upper = poi[2] + self._reduced_size[2]+1
-
-        ''' Extract reduced space from prototype and target'''
-        reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
-        reduced_fat = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
-
-
-        ''' Create binary mask of the reduced space'''
-        reduced_mask_copy = reduced_mask.copy()
-        reduced_mask[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
-
-        print('\n'+'Ground truth:' )
-        print(self._target_poi)
-
-        return reduced_water, reduced_fat, reduced_mask
-
-
     def cross_correlation(self, reduced_prototype, ncc_poi):
 
         ''' Extend the reduced search space for cross correlation'''
@@ -199,6 +200,7 @@ class Utils:
 
         return adjusted_poi
 
+
     def extract_ground_truth(self, reduced_mask):
 
         voxel_size = self._target_voxel_size
@@ -206,19 +208,20 @@ class Utils:
         target_size = self._target_size
 
         z_upper = target_size[0]-target_poi[0]
-        z_lower = target_size[0]-z_upper
+        z_lower = target_poi[0]
         y_upper = target_size[1]-target_poi[1]
-        y_lower = target_size[1]-y_upper
+        y_lower = target_poi[1]
         x_upper = target_size[2]-target_poi[2]
-        x_lower = target_size[2]-x_upper
+        x_lower = target_poi[2]
 
 
         ''' Extract arrays containing voxel distances to the target poi position '''
-        z_voxel_dist, y_voxel_dist, x_voxel_dist = np.mgrid[-z_lower:z_upper,-y_lower:y_upper,-x_lower:x_upper]
+        z_voxel_dist, y_voxel_dist, x_voxel_dist = np.mgrid[-z_lower:z_upper, -y_lower:y_upper, -x_lower:x_upper]
 
         ''' Express in milimeters according to voxel sizes '''
         voxel_dist = [z_voxel_dist, y_voxel_dist, x_voxel_dist]
 
+        ''' Extract distances to ground truth in the reduced search space area'''
         reduced_voxel_dist = [dist[reduced_mask] for dist in voxel_dist]
 
         return reduced_voxel_dist
@@ -227,7 +230,7 @@ class Utils:
 
         target_size = self._target_size
 
-        ''' Extract arrays containing voxel positions in reduced search space'''
+        ''' Extract arrays containing voxel indices in reduced search space'''
         z_grid, y_grid, x_grid = np.mgrid[0:target_size[0], 0:target_size[1], 0:target_size[2]]
 
         grids = [z_grid, y_grid, x_grid]
@@ -235,6 +238,21 @@ class Utils:
         reduced_grids = [grid[reduced_mask] for grid in grids]
 
         return reduced_grids
+
+    def extract_T9_features(self, reduced_grids):
+
+        voxel_size = self._target_voxel_size
+
+        ''' Extract distances between every voxel in reduced search space and left/right femur'''
+        lf_T9 = [(reduced_grids[ind] - pos)*voxel_size[ind] for ind, pos in enumerate(self._water_target.get_poi('LeftFemur'))]
+        rf_T9 = [(reduced_grids[ind] - pos)*voxel_size[ind] for ind, pos in enumerate(self._water_target.get_poi('RightFemur'))]
+
+        lf_T9_ravel = np.ravel(lf_T9[0]/self._target_length)
+        rf_T9_ravel = np.ravel(rf_T9[0]/self._target_length)
+
+        T9_features = np.transpose(np.vstack([lf_T9_ravel,rf_T9_ravel]))
+
+        return T9_features
 
     def regression_voting(self, regression, position_grids):
 

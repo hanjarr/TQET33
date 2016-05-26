@@ -7,10 +7,11 @@ import time
 
 class RegressionForest:
 
-    def __init__(self, n_estimators, max_features, bootstrap):
+    def __init__(self, n_estimators, max_features, bootstrap, oob_score):
         self._estimators = n_estimators
         self._max_features = max_features
         self._bootstrap = bootstrap
+        self._oob_score = oob_score
 
     def feature_selection(self, X_train, y_train, select):
 
@@ -59,7 +60,7 @@ class RegressionForest:
         ''' Estimators to use '''
         ESTIMATORS = {
             "Regression forest": ExtraTreesRegressor(n_estimators = self._estimators, 
-                max_features = self._max_features, bootstrap = self._bootstrap, n_jobs = -1, oob_score = True)
+                max_features = self._max_features, bootstrap = self._bootstrap, n_jobs = -1, oob_score = self._oob_score)
         }
 
         trained_estimators = dict()
@@ -71,7 +72,8 @@ class RegressionForest:
         end = time.time()
         print(end - start)
 
-        print(trained_estimator.oob_score_)
+        if self._oob_score:
+            print(trained_estimator.oob_score_)
 
         return trained_estimators
 

@@ -83,6 +83,48 @@ class Utils:
 
         return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
 
+    def train_reduction(self):
+
+        ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
+        reduced_mask = np.zeros((self._target_size), dtype = bool)
+
+        ''' Calculate ncc between reduced target and reduced prototype space. 
+            Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
+
+        ''' Mean deviation from ground truth POI and standard deviation for Morphon'''
+        mean_dev = np.array([ 1.20512821,  1.97435897,  1.25641026])
+        mean_std = np.array([ 0.93861565,  1.32987718,  1.19223876])
+
+        ''' Directional combinations'''
+        dir_comb = np.array([[1,1,1],[1,1,-1],[1,-1,-1],[-1,1,-1],[1,-1,1],[-1,-1,-1]])
+
+        ''' Take directions into account in the mean POI deviation'''
+        mean_temp = dir_comb[np.random.randint(0,len(dir_comb))]*mean_dev
+
+        ''' Add positional noise to POI position'''
+        poi = self._target_poi + np.round([np.random.normal(0, y) + x for x,y in zip(mean_temp,mean_std)]).astype(int)
+
+        z_lower = poi[0] - self._reduced_size[0]
+        z_upper = poi[0] + self._reduced_size[0]+1
+        y_lower = poi[1] - self._reduced_size[1]
+        y_upper = poi[1] + self._reduced_size[1]+1
+        x_lower = poi[2] - self._reduced_size[2]
+        x_upper = poi[2] + self._reduced_size[2]+1
+
+        ''' Extract reduced space from prototype and target'''
+        reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+        reduced_fat = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+
+
+        ''' Create binary mask of the reduced space'''
+        reduced_mask_copy = reduced_mask.copy()
+        reduced_mask[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
+
+        print('\n'+'Ground truth:' )
+        print(self._target_poi)
+
+        return reduced_water, reduced_fat, reduced_mask
+
 
     def test_reduction(self, prototype_data, prototype_pois):
 
@@ -129,38 +171,6 @@ class Utils:
 
         return reduced_water, reduced_fat, reduced_mask, poi_index
 
-
-    def train_reduction(self):
-
-        ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
-        reduced_mask = np.zeros((self._target_size), dtype = bool)
-
-        ''' Calculate ncc between reduced target and reduced prototype space. 
-            Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
-
-        reduced_size = self._reduced_size
-        poi = self._target_poi + np.round(abs(np.random.normal(2, 1, 3))).astype(int)
-
-        z_lower = poi[0] - self._reduced_size[0]
-        z_upper = poi[0] + self._reduced_size[0]+1
-        y_lower = poi[1] - self._reduced_size[1]
-        y_upper = poi[1] + self._reduced_size[1]+1
-        x_lower = poi[2] - self._reduced_size[2]
-        x_upper = poi[2] + self._reduced_size[2]+1
-
-        ''' Extract reduced space from prototype and target'''
-        reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
-        reduced_fat = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
-
-
-        ''' Create binary mask of the reduced space'''
-        reduced_mask_copy = reduced_mask.copy()
-        reduced_mask[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
-
-        print('\n'+'Ground truth:' )
-        print(self._target_poi)
-
-        return reduced_water, reduced_fat, reduced_mask
 
 
     def cross_correlation(self, reduced_prototype, ncc_poi):
@@ -305,6 +315,26 @@ class Utils:
 
         plt.show()
 
+    def plot_multi_regression(self, regressions):
+
+        reduced_size = (2*self._reduced_size+1)
+
+        [z,y,x] = [np.reshape(regression, reduced_size) for regression in regressions]
+
+        [z_grid, y_grid, x_grid] = np.mgrid[-self._reduced_size[0] : self._reduced_size[0]+1,\
+        -self._reduced_size[1] : self._reduced_size[1]+1,
+        -self._reduced_size[2]:self._reduced_size[2]+1]
+
+        fig = plt.figure(frameon=False)
+        ax = fig.gca(projection='3d')
+
+        ax.quiver(x_grid, y_grid, z_grid, x, y, z)
+
+        ax.view_init(elev=18, azim=30)
+        ax.dist=8 
+
+        plt.show()
+
 
     def plot_reduced(self, reduced_target, ncc_poi, reg_poi):
 
@@ -385,63 +415,3 @@ def extract_weights(ground_truth):
     weights = 1-0.2*ground_truth/(np.amax(ground_truth))
 
     return weights
-
-def plot_importances(estimators):
-
-    ''' Extract feature importances '''
-    importances = estimators["Regression forest"].feature_importances_
-
-    ''' Get sorted indices of most important features'''
-    std = np.std([tree.feature_importances_ for tree in estimators["Regression forest"].estimators_], axis=0)
-    indices = np.argsort(importances)[::-1]
-
-    indices = indices[0:30]
-
-    '''Print the feature ranking'''
-    print("Feature ranking:")
-
-    for f in range(30):
-        print("%d. feature %d (%f)" % (f + 1, indices[f], importances[indices[f]]))
-
-    ''' Plot the feature importances of the forest '''
-    plt.figure()
-    plt.title("Feature importances")
-    plt.bar(range(30), importances[indices],
-        color="r", yerr=std[indices], align="center")
-    plt.xticks(range(30), indices)
-    plt.xlim([-1, 30])
-    plt.show()
-
-def plot_distribution(error, voxel_error):
-
-    reg_error = [error[ind][0] for ind in range(len(error))]
-    ncc_error = [error[ind][1] for ind in range(len(error))]
-
-    reg_voxel_error = np.sum(np.array([voxel_error[ind][0] for ind in range(len(voxel_error))]),axis=1)
-    ncc_voxel_error = np.sum(np.array([voxel_error[ind][1] for ind in range(len(voxel_error))]),axis=1)
-
-    reg_hist = np.histogram(reg_error, range(np.amax(reg_error).astype(int)))
-    ncc_hist = np.histogram(ncc_error, range(np.amax(ncc_error).astype(int)))
-
-    reg_voxel_hist = np.histogram(reg_voxel_error, range(np.amax(reg_voxel_error).astype(int)))
-    ncc_voxel_hist = np.histogram(ncc_voxel_error, range(np.amax(ncc_voxel_error).astype(int)))
-
-    hist_data = [(reg_hist, ncc_hist),(reg_voxel_hist,ncc_voxel_hist)]
-
-    for data in hist_data:
-
-        fig = plt.figure(frameon=False)
-        ax = fig.add_subplot(111,projection='3d')
-
-        ax.bar(data[0][1][:-1], data[0][0], zs=0, zdir='y', color='b', alpha=0.6)
-        ax.bar(data[1][1][:-1], data[1][0], zs=1, zdir='y', color='r', alpha=0.7)
-
-        plt.autoscale(False)
-
-
-        ax.set_xlabel('Deviation')
-        ax.set_ylabel('Reg vs ncc')
-        ax.set_zlabel('Frequency')
-        plt.grid(True)
-
-    plt.show()
