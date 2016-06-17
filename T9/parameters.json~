@@ -38,5 +38,6 @@
   "max_features_select": 1000,
   "max_features": 100,
   "bootstrap": true,
+  "oob_score": true,
   "extension": 3
 }

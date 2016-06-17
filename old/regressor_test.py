@@ -35,7 +35,7 @@ y_test = test[:, np.floor(0.5 * n_pixels):]
 ESTIMATORS = {
     "Extra trees": ExtraTreesRegressor(n_estimators=12, max_features=32,
                                        random_state=0),
-    # "K-nn": KNeighborsRegressor(),
+    "K-nn": KNeighborsRegressor(),
     # "Linear regression": LinearRegression(),
     # "Ridge": RidgeCV(),
 }

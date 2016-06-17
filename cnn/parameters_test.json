@@ -1,0 +1,18 @@
+{
+  "test_targets": ["00091","00093"],
+
+  "selection_targets": ["0018A"],
+
+  "train_targets": ["00002","00003"],
+
+  "directory": "0030/",
+  "poi": "RightFemur",
+  "search_size": [25,25,25],
+  "nbr_of_filters": 10000,
+  "selected_filters": 200,
+  "patch_size": 7,
+
+  "kernel_size":3,
+  "iterations": 30,
+  "learning_rate": 0.02
+}

@@ -7,7 +7,7 @@ import numpy as np
 def main():
 
     ''' Choose parameter file'''
-    parameter_file = "/home/hannes/code/git/multivariate/parameters.json"
+    parameter_file = "/home/hannes/code/git/multivariate/parameters_S1.json"
 
     ''' Create module object '''
     module = Module(parameter_file)

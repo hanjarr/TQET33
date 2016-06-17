@@ -27,10 +27,10 @@
    "00174","001D0","0022E","0028F","002EB","00348","003A5","00402"],
 
   "directory": "0030/",
-  "poi": "T9",
+  "poi": "LeftFemur",
   "search_size": [22,22,22],
   "nbr_of_filters": 10000,
-  "selected_filters": 200,
+  "selected_filters": 50,
   "patch_size": 7,
 
   "nbr_of_trees_select": 50,

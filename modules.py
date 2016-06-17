@@ -1,8 +1,7 @@
 from utilities import Utils
 from utilities import extract_weights
 from feature_extraction import Feature
-from forest_regression import RegressionForest
-from forest_regression import run_forest
+from regression import Regression, run_estimator
 from sklearn.externals import joblib
 import numpy as np
 import json
@@ -46,8 +45,8 @@ class Module:
         ''' Generate filter bank '''
         filter_bank, filter_parameters = feature.generate_haar_()
 
-        ''' Create regression forest class object '''
-        forest = RegressionForest(Module.nbr_of_trees_select, Module.max_features_select, Module.bootstrap)
+        ''' Create regression class object '''
+        regressor = Regression(Module.nbr_of_trees_select, Module.max_features_select, Module.bootstrap)
 
 
         ''' Extract data to do filter selection with '''
@@ -80,7 +79,7 @@ class Module:
 
 
         ''' Select best filters '''
-        selection = forest.feature_selection(selection_features, selection_ground_truth, Module.selected_filters)#, selection_weights)
+        selection = regressor.feature_selection(selection_features, selection_ground_truth, Module.selected_filters)#, selection_weights)
 
         ''' Extract best filters '''
         filter_bank = [filter_bank[k] for k in selection]
@@ -128,11 +127,11 @@ class Module:
             #train_weights = np.hstack([train_weights, weights]) if train_weights.size else weights
 
 
-        ''' Create regression forest class object '''
-        forest = RegressionForest(Module.nbr_of_trees, Module.max_features, Module.bootstrap)
+        ''' Create regression class object '''
+        regressor = Regression(Module.nbr_of_trees, Module.max_features, Module.bootstrap)
 
-        ''' Generate trained forest '''
-        estimators = forest.generate_forest(train_features, train_ground_truth)#, train_weights)
+        ''' Generate trained regressor '''
+        estimators = regressor.generate_estimator(train_features, train_ground_truth)#, train_weights)
 
         ''' Save forest to file'''
         joblib.dump(estimators, 'RegressionForest.pkl', compress=1)
@@ -173,8 +172,10 @@ class Module:
 
             test_features = water_features
 
-            ''' Run test data through forest '''
-            regression = run_forest(estimators, test_features)
+            ''' Run test data through regressor '''
+            regressions = run_estimator(estimators, test_features)
+
+            regression = regressions["NN"]
 
             reg_poi = utils.estimate_poi_position(regression, reduced_mask)
             print(reg_poi)

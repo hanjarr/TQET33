@@ -32,6 +32,9 @@ class Module:
         self._poi = json_data.get('poi')
         self._extension = json_data.get('extension')
 
+        self._mean_dev = np.array(json_data.get('mean_dev'))
+        self._mean_std = np.array(json_data.get('mean_std'))
+
     def pre_selection(self):
 
         ''' Empty arrays for concatenating features '''
@@ -53,7 +56,7 @@ class Module:
             utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
 
             ''' Extract reduced data from fat and water signal'''
-            reduced_water, reduced_fat, reduced_mask = utils.train_reduction()
+            reduced_water, reduced_fat, reduced_mask = utils.train_reduction(mean_dev, mean_std)
 
             ''' Convolve with sobel filters'''
             sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
@@ -106,7 +109,7 @@ class Module:
             utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
 
             ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask = utils.train_reduction()
+            reduced_water, reduced_fat, reduced_mask = utils.train_reduction(mean_dev, mean_std)
 
             ''' Convolve with sobel filters'''
             sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
@@ -194,12 +197,11 @@ class Module:
             reg_voxel_diff, ncc_voxel_diff, reg_diff = utils.error_measure(reg_poi, ncc_poi)
             print(reg_diff)
 
+            #utils.plot_regression(regressions, reg_poi)
+
             ''' Save deviations from true POI'''
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
-
-            ''' Plot the regression map '''
-            utils.plot_multi_regression(regressions)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff

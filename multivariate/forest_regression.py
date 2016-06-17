@@ -1,4 +1,4 @@
-from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor
 from sklearn.cross_validation import ShuffleSplit
 from sklearn.metrics import r2_score
 import numpy as np
@@ -15,7 +15,7 @@ class RegressionForest:
     def feature_selection(self, X_train, y_train, select):
 
         ''' Generate forest to pre select important filters '''
-        estimator = self.generate_forest(X_train, y_train)
+        estimator = self.generate_forest(X_train, y_train, regressor = RandomForestRegressor)
         selection_estimator = estimator['Regression forest']
 
         ''' Extract feature importances '''
@@ -51,15 +51,15 @@ class RegressionForest:
             print(sorted([(round(np.mean(score), 4), feat) for
               feat, score in scores.items()], reverse=True))
 
-    def generate_forest(self, X_train, y_train):
+    def generate_forest(self, X_train, y_train, regressor = ExtraTreesRegressor):
 
         start = time.time()
         print("Train forest")
 
         ''' Estimators to use '''
         ESTIMATORS = {
-            "Regression forest": ExtraTreesRegressor(n_estimators = self._estimators, 
-                max_features = self._max_features, bootstrap = self._bootstrap, n_jobs = 10, oob_score = True)
+            "Regression forest": regressor(n_estimators = self._estimators, 
+                max_features = self._max_features, bootstrap = self._bootstrap, n_jobs = 6, oob_score = True)
         }
 
         trained_estimators = dict()
@@ -74,6 +74,7 @@ class RegressionForest:
         print(trained_estimator.oob_score_)
 
         return trained_estimators
+
 
 def run_forest(estimators, X_test):
 

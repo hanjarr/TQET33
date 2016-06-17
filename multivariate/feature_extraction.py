@@ -49,7 +49,7 @@ class Feature:
 
 
                 ''' Convolve the water and fat signal with the filter bank'''
-                water_conv = conv(water_target, complete_filter, mode='reflect', cval=0.0)
+                water_conv = conv(water_target, complete_filter, mode='constant', cval=0.0)
                 #fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
 
                 water_features[:,ind] = np.ravel(water_conv)

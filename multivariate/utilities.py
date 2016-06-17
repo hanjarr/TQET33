@@ -83,7 +83,7 @@ class Utils:
 
         return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
 
-    def train_reduction(self):
+    def train_reduction(self, mean_dev, mean_std):
 
         ''' Init empty lists for storing reduced prototypes, reduced target and ncc'''
         reduced_mask = np.zeros((self._target_size), dtype = bool)
@@ -92,8 +92,6 @@ class Utils:
             Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
 
         ''' Mean deviation from ground truth POI and standard deviation for Morphon'''
-        mean_dev = np.array([ 1.20512821,  1.97435897,  1.25641026])
-        mean_std = np.array([ 0.93861565,  1.32987718,  1.19223876])
 
         ''' Directional combinations'''
         dir_comb = np.array([[1,1,1],[1,1,-1],[1,-1,-1],[-1,1,-1],[1,-1,1],[-1,-1,-1]])
@@ -284,16 +282,18 @@ class Utils:
 
         return reg_voxel_diff, ncc_voxel_diff, reg_diff
 
-    def plot_regression(self, regression):
+    def plot_regression(self, regressions, reg_poi):
 
         reduced_size = (2*self._reduced_size+1)
 
-        min_pos = np.unravel_index(regression.argmin(), reduced_size)
-        regression_map = np.reshape(regression, reduced_size)
+        [z_reg, y_reg, x_reg] = [np.reshape(regression, reduced_size)*self._target_voxel_size[ind] for ind, regression in enumerate(regressions)]
+
+        regression_map = np.sqrt(z_reg**2 + y_reg**2 + x_reg**2)
+
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((regression_map[:, min_pos[1], :]), plt.get_cmap('jet'), origin='lower')
+        plt.imshow((regression_map[:, reg_poi[1], :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
         plt.plot(min_pos[2], min_pos[0], marker='o', color='g')
@@ -301,14 +301,14 @@ class Utils:
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((regression_map[:, : , min_pos[2]]), plt.get_cmap('jet'), origin='lower')
+        plt.imshow((regression_map[:, : , reg_poi[2]]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
         plt.plot(min_pos[1], min_pos[0], marker='o', color='g')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
+        plt.imshow((regression_map[reg_poi[0],:, :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
         plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
