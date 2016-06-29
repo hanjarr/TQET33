@@ -161,7 +161,7 @@ class Utils:
 
         ''' Extract reduced space from prototype and target'''
         reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
-        reduced_fat = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+        reduced_fat = self._fat_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
 
 
         ''' Create binary mask of the reduced space'''
@@ -278,7 +278,7 @@ class Utils:
         plt.imshow((regression_map[:, min_pos[1], :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
-        plt.plot(min_pos[2], min_pos[0], marker='o', color='g')
+        plt.plot(min_pos[2], min_pos[0], marker='+', color='w')
         #plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
 
         plt.figure(frameon =False)
@@ -286,14 +286,32 @@ class Utils:
         plt.imshow((regression_map[:, : , min_pos[2]]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
-        plt.plot(min_pos[1], min_pos[0], marker='o', color='g')
+        plt.plot(min_pos[1], min_pos[0], marker='+', color='w')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
         plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
-        plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
+        plt.plot(min_pos[2], min_pos[1], marker='+', color='w')
+
+        regression3d = regression_map[min_pos[0],:,:]
+        xx, yy = np.mgrid[0:regression3d.shape[0], 0:regression3d.shape[1]]
+
+        # create the figure
+        fig = plt.figure(frameon = False)
+        ax = fig.gca(projection='3d')
+        ax.plot_surface(xx, yy, regression3d ,rstride=1, cstride=1, cmap=plt.cm.jet,
+        linewidth=0)
+
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
+        # plt.autoscale(False)
+        # plt.colorbar()
+        # plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
+
+        plt.show()
 
         plt.show()
 

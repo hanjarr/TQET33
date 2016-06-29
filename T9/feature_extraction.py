@@ -13,66 +13,59 @@ class Feature:
         self._nbr_of_filters = nbr_of_filters
         self._patch_size = patch_size
 
-    def haar_extraction(self, water_target, fat_target, filter_banks, filter_parameters):
+    def haar_extraction(self, water_target, fat_target, filter_bank, filter_parameters):
 
         start = time.time()
         print("Feature extraction")
 
-        ''' List for features'''
-        extracted_features = []
-
-        for filter_bank, parameters in zip(filter_banks, filter_parameters):
-
-            ''' Allocate memory for storing feature vectors ''' 
-            water_features = np.zeros((len(np.ravel(water_target)), self._nbr_of_filters))
-            fat_features = water_features.copy()
-
-            for ind, haar_filter in enumerate(filter_bank):
-
-                first_cubical = haar_filter[0]
-                second_cubical = haar_filter[1]
-
-                rep_first = np.tile(first_cubical[None,:,:], ((parameters[ind][0][0]),1,1))
-                rep_second = np.tile(second_cubical[None,:,:], ((parameters[ind][1][0]),1,1))
-
-                ''' Zero pad the Haar convolutional kernel '''
-                front_zeros = np.zeros((parameters[ind][0][1], self._patch_size, self._patch_size))
-                back_zeros = np.zeros((parameters[ind][0][2], self._patch_size, self._patch_size))
-
-                front_zeros_ = np.zeros((parameters[ind][1][1], self._patch_size, self._patch_size))
-                back_zeros_ = np.zeros((parameters[ind][1][2], self._patch_size, self._patch_size))
-
-                first_filter = np.vstack((np.vstack((front_zeros, rep_first)), back_zeros))
-                second_filter = np.vstack((np.vstack((front_zeros_, rep_second)), back_zeros_))
-
-                complete_filter = first_filter + second_filter
+        ''' Allocate memory for storing feature vectors ''' 
+        water_features = np.zeros((len(np.ravel(water_target)), self._nbr_of_filters))
+        fat_features = water_features.copy()
 
 
-                ''' Convolve the water and fat signal with the filter bank'''
-                water_conv = conv(water_target, complete_filter, mode='reflect', cval=0.0)
-                #fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
+        for ind, haar_filter in enumerate(filter_bank):
 
-                water_features[:,ind] = np.ravel(water_conv)
-                #fat_features[:,ind] = np.ravel(fat_conv)
+            first_cubical = haar_filter[0]
+            second_cubical = haar_filter[1]
 
-            extracted_features.append(water_features)
+            rep_first = np.tile(first_cubical[None,:,:], ((filter_parameters[ind][0][0]),1,1))
+            rep_second = np.tile(second_cubical[None,:,:], ((filter_parameters[ind][1][0]),1,1))
+
+            ''' Zero pad the Haar convolutional kernel '''
+            front_zeros = np.zeros((filter_parameters[ind][0][1], self._patch_size, self._patch_size))
+            back_zeros = np.zeros((filter_parameters[ind][0][2], self._patch_size, self._patch_size))
+
+            front_zeros_ = np.zeros((filter_parameters[ind][1][1], self._patch_size, self._patch_size))
+            back_zeros_ = np.zeros((filter_parameters[ind][1][2], self._patch_size, self._patch_size))
+
+            first_filter = np.vstack((np.vstack((front_zeros, rep_first)), back_zeros))
+            second_filter = np.vstack((np.vstack((front_zeros_, rep_second)), back_zeros_))
+
+            complete_filter = first_filter + second_filter
+
+
+            ''' Convolve the water and fat signal with the filter bank'''
+            water_conv = conv(water_target, complete_filter, mode='constant', cval=0.0)
+            #fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
+
+            water_features[:,ind] = np.ravel(water_conv)
+            #fat_features[:,ind] = np.ravel(fat_conv)
 
 
         end = time.time()
         print(end - start)
 
-        return extracted_features
+        return water_features, fat_features
 
     def sobel_extraction(self, water_target, fat_target):
 
         water_features = np.zeros((water_target.shape))
-        fat_features = water_features.copy()
 
         for direction in range(2,-1,-1):
             deriv = sobel(water_target, direction)
             water_features = water_features + deriv**2
         water_features = np.sqrt(water_features)
-        return water_features, fat_features
+        return water_features
 
 
     def generate_haar(self):

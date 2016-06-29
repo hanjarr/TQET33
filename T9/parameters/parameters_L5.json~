@@ -1,0 +1,23 @@
+{
+  "test_targets": 
+["00010","00011","00012","00013","00014","00015","00016","00018","00019"],
+
+
+  "directory": "0064/",
+  "poi_list": ["L5","L4","L3","L2","L1","T12","T11","T10","T9"],
+  "search_size": [22,22,22],
+  "nbr_of_filters": 10000,
+  "selected_filters": 200,
+  "patch_size": 7,
+
+  "nbr_of_trees_select": 50,
+  "nbr_of_trees": 50,
+  "max_features_select": 1000,
+  "max_features": 100,
+  "bootstrap": true,
+  "extension": 3,
+
+  "mean_dev": [3, 2.23,  2.23],
+  "mean_std": [4.9813529092421103, 5.0376726160220588, 2.5377478596237877]
+
+}

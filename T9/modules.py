@@ -1,9 +1,8 @@
 from utilities import Utils
-from utilities import extract_weights
 from feature_extraction import Feature
-from forest_regression import RegressionForest
-from forest_regression import run_forest
+from regression import Regression, run_estimator
 from sklearn.externals import joblib
+from sklearn import preprocessing
 import numpy as np
 import json
 
@@ -14,214 +13,81 @@ class Module:
             json_data = json.load(json_file)
 
         self._directory = json_data['directory']
-        self._selection_targets = json_data['selection_targets']
-        self._train_targets = json_data["train_targets"]
         self._test_targets = json_data["test_targets"]
-
         self._search_size = np.array(json_data['search_size'])
+        self._poi_list = json_data.get('poi_list')
         self._selected_filters = json_data.get('selected_filters')
-        self._nbr_of_filters = json_data['nbr_of_filters']
-        self._patch_size = json_data['patch_size']
+        self._patch_size = json_data.get('patch_size')
+        self._vectors = json_data.get('vectors')
+        self.poi_pos = []
 
-        self._max_features_select = json_data['max_features_select']
-        self._max_features = json_data['max_features']
-        self._nbr_of_trees_select = json_data['nbr_of_trees_select']
-        self._nbr_of_trees = json_data['nbr_of_trees']
-        self._bootstrap = json_data['bootstrap']
-        self._oob_score = json_data['oob_score']
 
-        self._poi = json_data.get('poi')
-        self._extension = json_data.get('extension')
-
-    def pre_selection(self):
-
-        ''' Empty arrays for concatenating features '''
-        selection_features, ground_truth_z, ground_truth_y, ground_truth_x = np.array([]), np.array([]), np.array([]), np.array([])
-
-        ''' Create feature object '''
-        feature = Feature(self._nbr_of_filters, self._patch_size)
-
-        ''' Generate filter bank '''
-        filter_bank, filter_parameters = feature.generate_haar_()
-
-        ''' Create regression forest class object '''
-        forest = RegressionForest(self._nbr_of_trees_select, self._max_features_select, self._bootstrap, self._oob_score)
-
-        ''' Extract data for filter selection'''
-        for target in self._selection_targets:
-
-            ''' Create utils class object '''
-            utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
-
-            ''' Extract reduced data from fat and water signal'''
-            reduced_water, reduced_fat, reduced_mask = utils.train_reduction()
-
-            ''' Convolve with sobel filters'''
-            sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
-
-            ''' Extract ground truth and features from filters'''
-            ground_truth = utils.extract_ground_truth(reduced_mask)
-            extracted_features = feature.haar_extraction(sobel_water, sobel_fat, [filter_bank,], [filter_parameters,])
-            extracted_features = extracted_features[0]
-
-            selection_features = np.vstack([extracted_features, selection_features]) if selection_features.size else extracted_features
-
-            ground_truth_z = np.hstack([ground_truth_z, ground_truth[0]]) if ground_truth_z.size else ground_truth[0]
-            ground_truth_y = np.hstack([ground_truth_y, ground_truth[1]]) if ground_truth_y.size else ground_truth[1]
-            ground_truth_x = np.hstack([ground_truth_x, ground_truth[2]]) if ground_truth_x.size else ground_truth[2]
-
-        selection_ground_truth = [ground_truth_z, ground_truth_y, ground_truth_x]
-
-        ''' Select best filters according to feature importance measure'''
-        output_filters, output_parameters = [], []
-
-        for ind, ground_truth in enumerate(selection_ground_truth):
-
-            selection = forest.feature_selection(selection_features, ground_truth, self._selected_filters)
-
-            ''' Extract best filters '''
-            filters = [filter_bank[k] for k in selection]
-            parameters = [filter_parameters[i] for i in selection]
-
-            np.save('filter_bank_' + str(ind) + '.npy', filters)
-            np.save('filter_parameters_' + str(ind) + '.npy', parameters)
-
-            output_filters.append(filters)
-            output_parameters.append(parameters)
-
-        return output_filters, output_parameters
-
-    def training(self, filter_banks, filter_parameters):
-
-        ''' Empty arrays for concatenating features '''
-        train_features_z, train_features_y, train_features_x, ground_truth_z, ground_truth_y, ground_truth_x = \
-        np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
-
-        ''' Create feature object '''
-        feature = Feature(self._selected_filters, self._patch_size)
-
-        for target in self._train_targets:
-            print(target)
-
-            ''' Create utils class object '''
-            utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
-
-            ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask = utils.train_reduction()
-
-            ''' Convolve with sobel filters'''
-            sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
-
-            ''' Extract ground truth'''
-            ground_truth = utils.extract_ground_truth(reduced_mask)
-
-            ''' Extract features'''
-            extracted_features = feature.haar_extraction(sobel_water, sobel_fat, filter_banks, filter_parameters)
-
-            ''' Positions in the reduced space'''
-            position_grids = utils.extract_grids(reduced_mask)
-
-            '''Extract T9 features'''
-            T9_features = utils.extract_T9_features(position_grids)
-
-            ''' Add T9 features to extracted features'''
-            for dim in range(len(extracted_features)):
-                extracted_features[dim] = np.hstack([extracted_features[dim], T9_features])
-
-            ''' Stack features, ground truth'''
-            train_features_z = np.vstack([train_features_z, extracted_features[0]]) if train_features_z.size else extracted_features[0]
-            train_features_y = np.vstack([train_features_y, extracted_features[1]]) if train_features_y.size else extracted_features[1]
-            train_features_x = np.vstack([train_features_x, extracted_features[2]]) if train_features_x.size else extracted_features[2]
-
-            ground_truth_z = np.hstack([ground_truth_z, ground_truth[0]]) if ground_truth_z.size else ground_truth[0]
-            ground_truth_y = np.hstack([ground_truth_y, ground_truth[1]]) if ground_truth_y.size else ground_truth[1]
-            ground_truth_x = np.hstack([ground_truth_x, ground_truth[2]]) if ground_truth_x.size else ground_truth[2]
-
-        ''' Store ground truth and features in lists'''
-        train_ground_truth = [ground_truth_z, ground_truth_y, ground_truth_x]
-        train_features = [train_features_z, train_features_y, train_features_x]
-
-        ''' Empty list for trained forest estimators, one for each orientation'''
-        estimators = []
-
-        ''' Create regression forest class object '''
-        forest = RegressionForest(self._nbr_of_trees, self._max_features, self._bootstrap, self._oob_score)
-
-        for ind, features in enumerate(train_features):
-
-            ''' Generate trained forest '''
-            estimator = forest.generate_forest(features, train_ground_truth[ind])
-
-            ''' Save forest estimator to file'''
-            joblib.dump(estimator, 'RegressionForest_' + str(ind) + '.pkl', compress=1)
-
-            estimators.append(estimator)
-
-        return estimators
-
-    def testing(self, estimators, filter_banks, filter_parameters):
+    def testing(self):
 
         ''' Empty list for storing displacement from target POI'''
-        reg_error, ncc_error, reg_voxel_error, ncc_voxel_error = [], [], np.array([]), np.array([]);
-
-        ''' Create feature object '''
-        feature = Feature(self._selected_filters, self._patch_size)
+        reg_error, estimate_error, reg_voxel_error, estimate_voxel_error = [], [], np.array([]), np.array([]);
 
         for target in self._test_targets:
-
-            prototype_path = '/media/hannes/localDrive/DB/' + self._directory + target + '/prototypes'
             print(target)
 
-            ''' Create utils class object '''
-            utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
+            for ind, poi in enumerate(self._poi_list):
 
-            ''' Load prototype data and POI positions'''
-            prototype_data, prototype_pois = utils.load_prototypes(prototype_path)
+                print('Current POI:')
+                print(poi)
 
-            ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
+                ''' Create utils class object '''
+                utils = Utils(self._directory, target, self._search_size, poi)
 
-            ''' Convolve with sobel filters'''
-            sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
+                ''' Create feature object '''
+                feature = Feature(self._selected_filters, self._patch_size)
 
-            ''' Extract testing grids'''
-            position_grids = utils.extract_grids(reduced_mask)
+                filter_bank = np.load('/media/hannes/localDrive/trained/multi2/T9/'+ poi +'/filter_bank.npy')
+                filter_parameters = np.load('/media/hannes/localDrive/trained/multi2/T9/'+ poi +'/filter_parameters.npy')
+                estimator = joblib.load('/media/hannes/localDrive/trained/multi2/T9/'+ poi +'/RegressionForest.pkl')
 
-            '''Extract T9 features'''
-            T9_features = utils.extract_T9_features(position_grids)
 
-            ''' Extract testing features '''
-            test_features = feature.haar_extraction(sobel_water, sobel_fat, filter_banks, filter_parameters)
+                if poi == 'S1':
 
-            ''' Add T9 features to extracted features'''
-            for dim in range(len(test_features)):
-                test_features[dim] = np.hstack([test_features[dim], T9_features]) 
 
-            ''' Run test data through forest '''
-            regressions = []
-            for estimator, features in zip(estimators, test_features):
+                    prototype_path = '/media/hannes/localDrive/DB/' + self._directory + target + '/prototypes'
 
-                regression = run_forest(estimator, features)
-                regression = [int(round(n, 0)) for n in regression]
+                    ''' Load prototype data and POI positions'''
+                    prototype_data, prototype_pois = utils.load_prototypes(prototype_path)
 
-                regressions.append(regression)
+                    ''' Init POI as just the ground truth + noise to reduce training time'''
+                    reduced_water, reduced_fat, reduced_mask, ncc_diff, estimate_poi = utils.init_poi(prototype_data, prototype_pois)
 
-            reg_poi = utils.regression_voting(regressions, position_grids)
-            print(reg_poi)
+                    self.poi_pos.append(estimate_poi)
 
-            reg_voxel_diff, ncc_voxel_diff, reg_diff = utils.error_measure(reg_poi, ncc_poi)
-            print(reg_diff)
+                else:
+
+                    reduced_water, reduced_fat, reduced_mask, estimate_poi = utils.test_reduction(self.poi_pos[-1], self._vectors[ind-1])
+
+
+                ''' Extract testing features '''
+                water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
+
+                test_features = water_features
+
+                ''' Extract testing grids'''
+                position_grids = utils.extract_grids(reduced_mask)
+
+                ''' Run test data through regressor '''
+                regressions = run_estimator(estimator, test_features)
+
+                regression = regressions["Regression forest"]
+
+                reg_poi, voting_map = utils.regression_voting(regression, position_grids)
+                print(reg_poi)
+
+                reg_voxel_diff, estimate_voxel_diff, reg_diff, estimate_diff = utils.error_measure(reg_poi, estimate_poi)
+                print(reg_diff)
+
+                self.poi_pos.append(reg_poi)
 
             ''' Save deviations from true POI'''
             reg_error.append(reg_diff)
-            ncc_error.append(ncc_diff)
-
-            ''' Plot the regression map '''
-            #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
-
-            reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
-            ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff
-
+            estimate_error.append(estimate_diff)
 
         error = list(zip(reg_error,ncc_error))
         voxel_error = list(zip(reg_voxel_error, ncc_voxel_error))
@@ -232,7 +98,7 @@ class Module:
         print(np.mean(reg_error))
         print(np.std(reg_error))
 
-        print(np.mean(ncc_error))
-        print(np.std(ncc_error))
+        print(np.mean(estimate_error))
+        print(np.std(estimate_error))
 
         return error, voxel_error

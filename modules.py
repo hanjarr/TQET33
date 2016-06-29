@@ -7,7 +7,7 @@ import numpy as np
 import json
 
 class Module:
-    with open("/home/hannes/code/git/parameters.json") as json_file:
+    with open('/home/hannes/code/git/parameters.json') as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -175,7 +175,7 @@ class Module:
             ''' Run test data through regressor '''
             regressions = run_estimator(estimators, test_features)
 
-            regression = regressions["NN"]
+            regression = regressions["Regression forest"]
 
             reg_poi = utils.estimate_poi_position(regression, reduced_mask)
             print(reg_poi)

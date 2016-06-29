@@ -46,10 +46,10 @@ class Feature:
 
             ''' Convolve the water and fat signal with the filter bank'''
             water_conv = conv(water_target, complete_filter, mode='constant', cval=0.0)
-            #fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
+            fat_conv = conv(fat_target, complete_filter, mode='constant', cval=0.0)
 
             water_features[:,ind] = np.ravel(water_conv)
-            #fat_features[:,ind] = np.ravel(fat_conv)
+            fat_features[:,ind] = np.ravel(fat_conv)
 
 
         end = time.time()
@@ -60,12 +60,13 @@ class Feature:
     def sobel_extraction(self, water_target, fat_target):
 
         water_features = np.zeros((water_target.shape))
+        fat_features = water_features.copy()
 
         for direction in range(2,-1,-1):
             deriv = sobel(water_target, direction)
             water_features = water_features + deriv**2
         water_features = np.sqrt(water_features)
-        return water_features
+        return water_features, fat_features
 
 
     def generate_haar(self):

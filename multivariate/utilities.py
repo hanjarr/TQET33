@@ -97,13 +97,13 @@ class Utils:
         dir_comb = np.array([[1,1,1],[1,1,-1],[1,-1,-1],[-1,1,-1],[1,-1,1],[-1,-1,-1]])
 
         ''' Take directions into account in the mean POI deviation'''
-        mean_temp = dir_comb[np.random.randint(0,len(dir_comb))]*mean_dev
+        mean_temp = dir_comb[np.random.randint(0,len(dir_comb))]*mean_dev/self._target_voxel_size
 
         ''' Add positional noise to POI position'''
-        poi = self._target_poi + np.round([np.random.normal(0, y) + x for x,y in zip(mean_temp,mean_std)]).astype(int)
+        poi = self._target_poi + np.round([np.random.normal(0, y) + x for x,y in zip(mean_temp, mean_std/self._target_voxel_size)]).astype(int)
 
-        z_lower = poi[0] - self._reduced_size[0]
-        z_upper = poi[0] + self._reduced_size[0]+1
+        z_lower = poi[0] - self._reduced_size[0]+2
+        z_upper = poi[0] + self._reduced_size[0]+1+2
         y_lower = poi[1] - self._reduced_size[1]
         y_upper = poi[1] + self._reduced_size[1]+1
         x_lower = poi[2] - self._reduced_size[2]
@@ -135,8 +135,8 @@ class Utils:
 
         for ind, poi in enumerate(prototype_pois):
 
-            z_lower = poi[0] - self._reduced_size[0]
-            z_upper = poi[0] + self._reduced_size[0]+1
+            z_lower = poi[0] - self._reduced_size[0]+2
+            z_upper = poi[0] + self._reduced_size[0]+1+2
             y_lower = poi[1] - self._reduced_size[1]
             y_upper = poi[1] + self._reduced_size[1]+1
             x_lower = poi[2] - self._reduced_size[2]

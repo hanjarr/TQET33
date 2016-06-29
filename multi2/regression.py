@@ -65,7 +65,7 @@ class Regression:
         end = time.time()
         print(end - start)
 
-        #print(trained_estimator.oob_score_)
+        print(trained_estimator.oob_score_)
 
         return trained_estimators
 

@@ -5,6 +5,7 @@ from scipy.ndimage.filters import gaussian_filter
 from os import listdir
 from os.path import isfile, join
 import numpy as np
+from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Rectangle
@@ -112,7 +113,16 @@ class Utils:
 
         ''' Extract reduced space from prototype and target'''
         reduced_water = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
-        reduced_fat = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+        reduced_fat = self._fat_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
+
+        water_fat = reduced_fat + reduced_water
+
+
+        #reduced_water -= reduced_water.mean(dtype=np.float64)
+        #normalized_water = reduced_water/norm(reduced_water)
+
+        #reduced_fat -= reduced_fat.mean(dtype=np.float64)
+        #normalized_fat = reduced_fat/norm(reduced_fat)
 
 
         ''' Create binary mask of the reduced space'''
@@ -170,6 +180,13 @@ class Utils:
 
         reduced_water = np.reshape(self._water_data[reduced_mask], (2*self._reduced_size+1))
         reduced_fat = np.reshape(self._fat_data[reduced_mask], (2*self._reduced_size+1))
+
+        water_fat = reduced_fat + reduced_water
+        #reduced_water -= reduced_water.mean(dtype=np.float64)
+        #normalized_water = reduced_water/norm(reduced_water)
+
+        #reduced_fat -= reduced_fat.mean(dtype=np.float64)
+        #normalized_fat = reduced_fat/norm(reduced_fat)
 
         return reduced_water, reduced_fat, reduced_mask, poi_index
 
@@ -324,23 +341,23 @@ class Utils:
         x_upper = reg_poi[2] + self._reduced_size[2] + 1
 
 
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        plt.autoscale(False)
-        plt.colorbar()
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        # plt.autoscale(False)
+        # plt.colorbar()
 
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((voting_map[:, reg_poi[1], :]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        plt.autoscale(False)
-        plt.colorbar()
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((voting_map[:, reg_poi[1], :]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        # plt.autoscale(False)
+        # plt.colorbar()
 
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((voting_map[:,:,reg_poi[2]]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        plt.autoscale(False)
-        plt.colorbar()
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((voting_map[:,:,reg_poi[2]]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        # plt.autoscale(False)
+        # plt.colorbar()
 
         test = voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]
         xx, yy = np.mgrid[0:test.shape[0], 0:test.shape[1]]
@@ -350,6 +367,9 @@ class Utils:
         ax = fig.gca(projection='3d')
         ax.plot_surface(xx, yy, test ,rstride=1, cstride=1, cmap=plt.cm.jet,
         linewidth=0)
+
+        #plt.savefig('voting.png', bbox_inches='tight')
+
 
         # plt.figure(frameon =False)
         # currentAxis = plt.gca()

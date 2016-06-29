@@ -56,7 +56,7 @@ class Module:
             utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
 
             ''' Extract reduced data from fat and water signal'''
-            reduced_water, reduced_fat, reduced_mask = utils.train_reduction(mean_dev, mean_std)
+            reduced_water, reduced_fat, reduced_mask = utils.train_reduction(self._mean_dev, self._mean_std)
 
             ''' Convolve with sobel filters'''
             sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
@@ -109,7 +109,7 @@ class Module:
             utils = Utils(self._directory, target, self._search_size, self._extension, self._poi)
 
             ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask = utils.train_reduction(mean_dev, mean_std)
+            reduced_water, reduced_fat, reduced_mask = utils.train_reduction(self._mean_dev, self._mean_std)
 
             ''' Convolve with sobel filters'''
             sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
@@ -154,7 +154,7 @@ class Module:
     def testing(self, estimators, filter_banks, filter_parameters):
 
         ''' Empty list for storing displacement from target POI'''
-        reg_error, ncc_error, reg_voxel_error, ncc_voxel_error = [], [], np.array([]), np.array([]);
+        reg_error, ncc_error, outliers, reg_voxel_error, ncc_voxel_error = [], [], [], np.array([]), np.array([]);
 
         ''' Create feature object '''
         feature = Feature(self._selected_filters, self._patch_size)
@@ -203,6 +203,9 @@ class Module:
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
 
+            outlier_bool = abs(reg_poi[0] - ncc_poi[0]) > 4
+            outliers.append(outlier_bool)
+
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff
 
@@ -212,6 +215,7 @@ class Module:
 
         np.save('error.npy', error)
         np.save('voxel_error.npy', voxel_error)
+        np.save('outliers.npy', outliers)
 
         print(np.mean(reg_error))
         print(np.std(reg_error))

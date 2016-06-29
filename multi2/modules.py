@@ -59,6 +59,9 @@ class Module:
             ''' Extract reduced data from fat and water signal'''
             reduced_water, reduced_fat, reduced_mask = utils.train_reduction(self._mean_dev, self._mean_std)
 
+            ''' Convolve with sobel filters'''
+            sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
+
             ''' Extract ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
@@ -98,10 +101,12 @@ class Module:
             ''' Init POI as just the ground truth + noise to reduce training time'''
             reduced_water, reduced_fat, reduced_mask = utils.train_reduction(self._mean_dev, self._mean_std)
 
+            ''' Convolve with sobel filters'''
+            sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
+
             ''' Extract ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
-            ''' Extract features '''
             water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
             extracted_features = water_features
@@ -144,13 +149,16 @@ class Module:
             ''' Init POI as just the ground truth + noise to reduce training time'''
             reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
 
+            ''' Convolve with sobel filters'''
+            sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
+
             ''' Extract testing ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
             ''' Extract testing features '''
             water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
-            test_features = water_features
+            test_features =  water_features
 
             ''' Extract testing grids'''
             position_grids = utils.extract_grids(reduced_mask)
@@ -166,7 +174,7 @@ class Module:
             reg_voxel_diff, ncc_voxel_diff, reg_diff = utils.error_measure(reg_poi, ncc_poi)
             print(reg_diff)
 
-            utils.plot_regression(reg_poi, voting_map)
+            #utils.plot_regression(reg_poi, voting_map)
 
             ''' Save deviations from true POI'''
             reg_error.append(reg_diff)
