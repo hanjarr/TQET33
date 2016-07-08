@@ -45,15 +45,7 @@ class Regression:
         ''' Estimators to use '''
         ESTIMATORS = {
             "Regression forest": ExtraTreesRegressor(n_estimators= self._estimators, 
-                max_features=self._max_features, bootstrap=self._bootstrap, n_jobs = 6, oob_score=True),
-            #"KNR": KNeighborsRegressor(),
-            #"Linear regression": LinearRegression(),
-            #"Ridge": RidgeCV(),
-            #"SVR": SVR(),
-            #'CNN': Regressor(layers=[Convolution("Rectifier", channels=8, kernel_shape=(3,3)), Layer("Linear")], 
-            #    learning_rate=0.002, n_iter=5)
-            #'NN': Regressor(layers=[Layer("Rectifier", units = 100), Layer("Rectifier", units = 30), Layer("Linear")],
-            #    learning_rate=0.01, n_iter=30)
+                max_features=self._max_features, bootstrap=self._bootstrap, n_jobs = -1, oob_score=True)
         }
 
         trained_estimators = dict()

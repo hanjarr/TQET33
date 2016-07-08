@@ -25,10 +25,12 @@ class Module:
     def testing(self):
 
         ''' Empty list for storing displacement from target POI'''
-        reg_error, estimate_error, reg_voxel_error, estimate_voxel_error = [], [], np.array([]), np.array([]);
+        reg_error, estimate_error, reg_voxel_error, reg_pois = [], [], np.array([]), np.array([]);
 
         for target in self._test_targets:
             print(target)
+
+            reg_diff_list = []
 
             for ind, poi in enumerate(self._poi_list):
 
@@ -46,8 +48,7 @@ class Module:
                 estimator = joblib.load('/media/hannes/localDrive/trained/multi2/T9/'+ poi +'/RegressionForest.pkl')
 
 
-                if poi == 'S1':
-
+                if poi == 'RightFemur':
 
                     prototype_path = '/media/hannes/localDrive/DB/' + self._directory + target + '/prototypes'
 
@@ -62,7 +63,6 @@ class Module:
                 else:
 
                     reduced_water, reduced_fat, reduced_mask, estimate_poi = utils.test_reduction(self.poi_pos[-1], self._vectors[ind-1])
-
 
                 ''' Extract testing features '''
                 water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
@@ -80,20 +80,25 @@ class Module:
                 reg_poi, voting_map = utils.regression_voting(regression, position_grids)
                 print(reg_poi)
 
-                reg_voxel_diff, estimate_voxel_diff, reg_diff, estimate_diff = utils.error_measure(reg_poi, estimate_poi)
+                reg_diff, estimate_diff = utils.error_measure(reg_poi, estimate_poi)
                 print(reg_diff)
 
                 self.poi_pos.append(reg_poi)
+                reg_diff_list.append(reg_diff)
+
+                #utils.plot_regression(estimate_poi, reg_poi, voting_map)
+                #utils.plot_reduced(reduced_water, estimate_poi, reg_poi)
 
             ''' Save deviations from true POI'''
             reg_error.append(reg_diff)
             estimate_error.append(estimate_diff)
 
-        error = list(zip(reg_error,ncc_error))
-        voxel_error = list(zip(reg_voxel_error, ncc_voxel_error))
+            reg_pois = np.vstack([reg_pois, np.array(reg_diff_list)]) if reg_pois.size else np.array(reg_diff_list)
+
+        error = list(zip(reg_error, estimate_error))
 
         np.save('error.npy', error)
-        np.save('voxel_error.npy', voxel_error)
+        np.save('reg.npy', reg_pois)
 
         print(np.mean(reg_error))
         print(np.std(reg_error))
@@ -101,4 +106,4 @@ class Module:
         print(np.mean(estimate_error))
         print(np.std(estimate_error))
 
-        return error, voxel_error
+        return error, reg_pois

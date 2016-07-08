@@ -171,7 +171,7 @@ class Module:
             prototype_data, prototype_pois = utils.load_prototypes(prototype_path)
 
             ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
+            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi, outlier = utils.init_poi(prototype_data, prototype_pois)
 
             ''' Convolve with sobel filters'''
             sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
@@ -203,8 +203,7 @@ class Module:
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
 
-            outlier_bool = abs(reg_poi[0] - ncc_poi[0]) > 4
-            outliers.append(outlier_bool)
+            outliers.append(outlier)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff

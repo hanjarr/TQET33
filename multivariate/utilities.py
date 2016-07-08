@@ -78,10 +78,13 @@ class Utils:
         print(ncc_poi)
         print(ncc_diff)
 
+        outlier = abs(ncc_poi[0] - self._target_poi[0]) < 5
+
+
         ''' Plot the reduced target with transformed pois'''
         #plot_reduced(self, reduced_target, reduced_prototype, ncc_poi)
 
-        return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
+        return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi, outlier
 
     def train_reduction(self, mean_dev, mean_std):
 

@@ -14,7 +14,7 @@
  "0004B","0004C","0004D","0004E","0004F","00050","00051"],
 
   "directory": "0064/",
-  "poi": "L5",
+  "poi": "L3",
   "search_size": [22,22,22],
   "nbr_of_filters": 10000,
   "selected_filters": 200,

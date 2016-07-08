@@ -94,7 +94,7 @@ class Feature:
         z_size, front_zeros, back_zeros = [], [], []
         z_size_, front_zeros_, back_zeros_ = [], [], []
 
-        max_haar_size = self._patch_size
+        max_haar_size = 7
         min_haar_size = 2
 
 
@@ -103,7 +103,7 @@ class Feature:
     
             ''' Randomize parameters for first cubical region '''
             haar_size = [rand.randint(min_haar_size, max_haar_size) for _ in range(0,3)]
-            origin = [rand.randint(0, max_haar_size - haar_size[1]), rand.randint(0, max_haar_size - haar_size[2])]
+            origin = [rand.randint(0, self._patch_size - haar_size[1]), rand.randint(0, self._patch_size - haar_size[2])]
             haar_bank[filt,origin[0]:origin[0] + haar_size[1], origin[1]:origin[1] + haar_size[2]] = 1/np.prod(haar_size)
 
             z_size.append(haar_size[0])
@@ -113,7 +113,7 @@ class Feature:
             ''' Randomize parameters for second cubical region '''
             rand.shuffle(haar_size)
             if rand.random() > 0.5:
-                origin = [rand.randint(0, max_haar_size - haar_size[1]), rand.randint(0, max_haar_size - haar_size[2])]
+                origin = [rand.randint(0, self._patch_size - haar_size[1]), rand.randint(0, self._patch_size- haar_size[2])]
                 haar_bank_[filt,origin[0]:origin[0] + haar_size[1], origin[1]:origin[1] + haar_size[2]] = -1/np.prod(haar_size)
 
             z_size_.append(haar_size[0])

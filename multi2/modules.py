@@ -45,6 +45,11 @@ class Module:
         ''' Generate filter bank '''
         filter_bank, filter_parameters = feature.generate_haar_()
 
+        ''' Original filter bank'''
+        #np.save('original_filters.npy', filter_bank)
+        #np.save('original_parameters', filter_parameters)
+
+
         ''' Create regression class object '''
         regressor = Regression(self._nbr_of_trees_select, self._max_features_select, self._bootstrap)
 
@@ -73,7 +78,7 @@ class Module:
             selection_ground_truth = np.vstack([selection_ground_truth, ground_truth]) if selection_ground_truth.size else ground_truth
 
         ''' Select best filters '''
-        selection = regressor.feature_selection(selection_features, selection_ground_truth, self._selected_filters)
+        selection, estimators = regressor.feature_selection(selection_features, selection_ground_truth, self._selected_filters)
 
         ''' Extract best filters '''
         filter_bank = [filter_bank[k] for k in selection]
@@ -81,6 +86,9 @@ class Module:
 
         np.save('filter_bank.npy',filter_bank)
         np.save('filter_parameters', filter_parameters)
+
+        ''' Save forest to file'''
+        #joblib.dump(estimators, 'FeatureForest.pkl', compress=3)
 
         return filter_bank, filter_parameters
 
@@ -123,14 +131,14 @@ class Module:
         estimators = regressor.generate_estimator(train_features, train_ground_truth)
 
         ''' Save forest to file'''
-        joblib.dump(estimators, 'RegressionForest.pkl', compress=1)
+        joblib.dump(estimators, 'forest/RegressionForest.pkl', compress=3)
 
         return estimators
 
     def testing(self, estimators, filter_bank, filter_parameters):
 
         ''' Empty list for storing displacement from target POI'''
-        reg_error, ncc_error, reg_voxel_error, ncc_voxel_error = [], [], np.array([]), np.array([]);
+        reg_error, ncc_error, inliers, reg_voxel_error, ncc_voxel_error = [], [], [], np.array([]), np.array([]);
 
         ''' Create feature object '''
         feature = Feature(self._selected_filters, self._patch_size)
@@ -147,7 +155,7 @@ class Module:
             prototype_data, prototype_pois = utils.load_prototypes(prototype_path)
 
             ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
+            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi, inlier = utils.init_poi(prototype_data, prototype_pois)
 
             ''' Convolve with sobel filters'''
             sobel_water, sobel_fat = feature.sobel_extraction(reduced_water, reduced_fat)
@@ -174,11 +182,14 @@ class Module:
             reg_voxel_diff, ncc_voxel_diff, reg_diff = utils.error_measure(reg_poi, ncc_poi)
             print(reg_diff)
 
-            #utils.plot_regression(reg_poi, voting_map)
+            utils.plot_regression(ncc_poi, reg_poi, voting_map)
+
+            utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
 
             ''' Save deviations from true POI'''
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
+            inliers.append(inlier)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff
@@ -189,6 +200,7 @@ class Module:
 
         np.save('error.npy', error)
         np.save('voxel_error.npy', voxel_error)
+        np.save('inliers.npy', inliers)
 
         print(np.mean(reg_error))
         print(np.std(reg_error))

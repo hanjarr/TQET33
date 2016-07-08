@@ -211,24 +211,19 @@ class Utils:
         estimate_voxel_diff = abs(self._target_poi - estimate_poi)
 
         reg_diff = np.sqrt(sum((reg_voxel_diff*self._target_voxel_size)**2))
-        estimate_diff = np.sqrt(sum((reg_voxel_diff*self._target_voxel_size)**2))
+        estimate_diff = np.sqrt(sum((estimate_voxel_diff*self._target_voxel_size)**2))
 
-        return reg_voxel_diff, estimate_voxel_diff, reg_diff, estimate_diff
+        return reg_diff, estimate_diff
 
-    def plot_regression(self, reg_poi, voting_map):
+    def plot_regression(self, ncc_poi, reg_poi, voting_map):
 
-        #reduced_size = (2*self._reduced_size+1)
 
-        #[z_reg, y_reg, x_reg] = [np.reshape(regression[:,ind], reduced_size) for ind in range(0,3)]
-        #regression_map = np.sqrt(z_reg**2 + y_reg**2 + x_reg**2)
-
-        z_lower = reg_poi[0] - self._reduced_size[0]
-        z_upper = reg_poi[0] + self._reduced_size[0] + 1
-        y_lower = reg_poi[1] - self._reduced_size[1]
-        y_upper = reg_poi[1] + self._reduced_size[1] + 1
-        x_lower = reg_poi[2] - self._reduced_size[2]
-        x_upper = reg_poi[2] + self._reduced_size[2] + 1
-
+        z_lower = ncc_poi[0] - self._reduced_size[0]  
+        z_upper = ncc_poi[0] + self._reduced_size[0] + 1 
+        y_lower = ncc_poi[1] - self._reduced_size[1] 
+        y_upper = ncc_poi[1] + self._reduced_size[1] + 1
+        x_lower = ncc_poi[2] - self._reduced_size[2] 
+        x_upper = ncc_poi[2] + self._reduced_size[2] + 1  
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
@@ -236,33 +231,23 @@ class Utils:
         plt.autoscale(False)
         plt.colorbar()
 
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((voting_map[:, reg_poi[1], :]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        plt.autoscale(False)
-        plt.colorbar()
+        plt.savefig('voting_xy.png', bbox_inches='tight')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((voting_map[:,:,reg_poi[2]]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        plt.imshow((voting_map[z_lower:z_upper, reg_poi[1], x_lower:x_upper]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
         plt.autoscale(False)
         plt.colorbar()
 
-        test = voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]
-        xx, yy = np.mgrid[0:test.shape[0], 0:test.shape[1]]
+        plt.savefig('voting_zx.png', bbox_inches='tight')
 
-        # create the figure
-        fig = plt.figure(frameon = False)
-        ax = fig.gca(projection='3d')
-        ax.plot_surface(xx, yy, test ,rstride=1, cstride=1, cmap=plt.cm.jet,
-        linewidth=0)
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((voting_map[z_lower:z_upper,y_lower:y_upper,reg_poi[2]]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        plt.autoscale(False)
+        plt.colorbar()
 
-        # plt.figure(frameon =False)
-        # currentAxis = plt.gca()
-        # plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
-        # plt.autoscale(False)
-        # plt.colorbar()
-        # plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
+        plt.savefig('voting_zy.png', bbox_inches='tight')
 
         plt.show()
 

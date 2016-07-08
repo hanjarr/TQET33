@@ -4,6 +4,7 @@ from amracommon.analysis.registration import normalized_cross_correlation
 from os import listdir
 from os.path import isfile, join
 import numpy as np
+from scipy.ndimage.filters import gaussian_filter
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Rectangle
@@ -78,17 +79,16 @@ class Utils:
         print('\n'+'Poi according to highest ncc reduced:')
         print(ncc_poi)
         print(ncc_diff)
-        # print(sorted_index)
-        # print('\n'+'Best prototype poi:' )
-        # print(prototype_pois[prototype_poi_index])
-        # print(poi_diff[prototype_poi_index])
+
+        inlier = abs(ncc_poi[0] - self._target_poi[0]) < 5
+
 
         ''' Plot the reduced spaces and transformed pois'''
         #plot_reduced(self, reduced_target, reduced_prototype, ncc_poi)
 
         #mean_poi = np.array(prototype_pois).mean(axis=0)
 
-        return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
+        return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi, inlier
 
 
     def test_reduction(self, prototype_data, prototype_pois):
@@ -117,6 +117,9 @@ class Utils:
             reduced_prototype = prototype[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
             reduced_target = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
 
+            lowpass_prototype = gaussian_filter(reduced_prototype,0.5,mode='constant')
+            lowpass_target = gaussian_filter(reduced_target,0.5,mode='constant')
+
             ''' Create binary mask of the reduced space'''
             reduced_mask_copy = reduced_mask.copy()
             reduced_mask_copy[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper] = True
@@ -127,7 +130,7 @@ class Utils:
             reduced_masks.append(reduced_mask_copy)
 
             ''' Calculate ncc and store in lists'''
-            ncc.append(normalized_cross_correlation(reduced_prototype, reduced_target))
+            ncc.append(normalized_cross_correlation(lowpass_prototype, lowpass_target))
 
         ''' Find index of poi which corresponds to highest ncc'''
         poi_index = ncc.index(max(ncc))    
@@ -150,10 +153,21 @@ class Utils:
             Reduced spaces will be of size 2*reduced_size+1 to get an odd kernel and a well defined center point''' 
 
         reduced_size = self._reduced_size
-        poi = self._target_poi + np.round(abs(np.random.normal(2, 1, 3))).astype(int)
 
-        z_lower = poi[0]-reduced_size[0]
-        z_upper = poi[0]+reduced_size[0]+1
+        mean_dev = [ 1,  3,  3]
+        mean_std = [ 1,  3,  3]
+
+        ''' Directional combinations'''
+        dir_comb = np.array([[1,1,1],[1,1,-1],[1,-1,-1],[-1,1,-1],[1,-1,1],[-1,-1,-1]])
+
+        ''' Take directions into account in the mean POI deviation'''
+        mean_temp = dir_comb[np.random.randint(0,len(dir_comb))]*mean_dev
+
+        ''' Add positional noise to POI position'''
+        poi = self._target_poi + np.round([np.random.normal(0, y) + x for x,y in zip(mean_temp, mean_std)]).astype(int)
+
+        z_lower = poi[0]-reduced_size[0]+2
+        z_upper = poi[0]+reduced_size[0]+1+2
         y_lower = poi[1]-reduced_size[1]
         y_upper = poi[1]+reduced_size[1]+1
         x_lower = poi[2]-reduced_size[2]
@@ -278,22 +292,26 @@ class Utils:
         plt.imshow((regression_map[:, min_pos[1], :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
-        plt.plot(min_pos[2], min_pos[0], marker='+', color='w')
-        #plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
+        #plt.plot(min_pos[2], min_pos[0], marker='o', color='g')
+        plt.savefig('reg_zx.png', bbox_inches='tight')
+
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
         plt.imshow((regression_map[:, : , min_pos[2]]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
-        plt.plot(min_pos[1], min_pos[0], marker='+', color='w')
+        #plt.plot(min_pos[1], min_pos[0], marker='o', color='g')
+        plt.savefig('reg_zy.png', bbox_inches='tight')
+
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
         plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
         plt.autoscale(False)
         plt.colorbar()
-        plt.plot(min_pos[2], min_pos[1], marker='+', color='w')
+        #plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
+        plt.savefig('reg_xy.png', bbox_inches='tight')
 
         regression3d = regression_map[min_pos[0],:,:]
         xx, yy = np.mgrid[0:regression3d.shape[0], 0:regression3d.shape[1]]
@@ -303,15 +321,6 @@ class Utils:
         ax = fig.gca(projection='3d')
         ax.plot_surface(xx, yy, regression3d ,rstride=1, cstride=1, cmap=plt.cm.jet,
         linewidth=0)
-
-        # plt.figure(frameon =False)
-        # currentAxis = plt.gca()
-        # plt.imshow((regression_map[min_pos[0],:, :]), plt.get_cmap('jet'), origin='lower')
-        # plt.autoscale(False)
-        # plt.colorbar()
-        # plt.plot(min_pos[2], min_pos[1], marker='o', color='g')
-
-        plt.show()
 
         plt.show()
 
@@ -340,33 +349,63 @@ class Utils:
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+        plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), interpolation = 'nearest', origin='lower')
         plt.autoscale(False)
         plt.plot(self._target_poi[2], self._target_poi[0], marker='o', color='g')
         plt.plot(ncc_poi[2], ncc_poi[0], marker='o', color='r')
         plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        plt.tight_layout()
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom='off', 
+            top='off',
+            labelbottom='off',
+            right='off', 
+            left='off', 
+            labelleft='off')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), origin='lower')
+        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), interpolation = 'nearest', origin='lower')
         plt.autoscale(False)
         plt.plot(self._target_poi[1], self._target_poi[0], marker='o', color='g')
         plt.plot(ncc_poi[1], ncc_poi[0], marker='o', color='r')
         plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
         ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        plt.tight_layout()
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom='off', 
+            top='off',
+            labelbottom='off',
+            right='off', 
+            left='off', 
+            labelleft='off')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), origin='lower')
+        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), interpolation = 'nearest', origin='lower')
         plt.autoscale(False)
         plt.plot(self._target_poi[2], self._target_poi[1], marker='o', color='g')
         plt.plot(ncc_poi[2], ncc_poi[1], marker='o', color='r')
         plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
+        plt.tight_layout()
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom='off', 
+            top='off',
+            labelbottom='off',
+            right='off', 
+            left='off', 
+            labelleft='off')
 
         plt.show()
 

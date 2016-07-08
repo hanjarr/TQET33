@@ -9,6 +9,8 @@ from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import Rectangle
+from collections import Counter, OrderedDict
+from itertools import islice
 import time
 
 class Utils:
@@ -82,10 +84,13 @@ class Utils:
         print(ncc_poi)
         print(ncc_diff)
 
+        inlier = abs(ncc_poi[0] - self._target_poi[0]) < 5
+
+
         ''' Plot the reduced target with transformed pois'''
         #plot_reduced(self, reduced_target, reduced_prototype, ncc_poi)
 
-        return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi
+        return reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi, inlier
 
     def train_reduction(self, mean_dev, mean_std):
 
@@ -146,8 +151,8 @@ class Utils:
 
         for ind, poi in enumerate(prototype_pois):
 
-            z_lower = poi[0] - self._reduced_size[0]
-            z_upper = poi[0] + self._reduced_size[0]+1
+            z_lower = poi[0] - self._reduced_size[0] 
+            z_upper = poi[0] + self._reduced_size[0]+1 
             y_lower = poi[1] - self._reduced_size[1]
             y_upper = poi[1] + self._reduced_size[1]+1
             x_lower = poi[2] - self._reduced_size[2]
@@ -278,17 +283,19 @@ class Utils:
         ''' Extract Poi with most votes'''
         max_pos = np.array(max(set(reg_positions), key=reg_positions.count))
 
-        print(max_pos)
-
         ''' Voting map for plotting'''
         for pos in reg_positions:
             voting_map[pos] += 1
+
+        #voting_dict = Counter(reg_positions).most_common()
+
+        #print(voting_dict[:50])
 
         ''' Normalize voting map'''
         voting_map /= np.amax(voting_map)
 
         ''' Get all positions which have more votes than 95 percent of the max number of votes'''
-        top_votes = np.array(np.where(voting_map > 0.95))
+        top_votes = np.array(np.where(voting_map > 0.95*np.amax(voting_map)))
         top_votes = np.array(list(zip(top_votes[0,:], top_votes[1,:], top_votes[2,:])))
 
         print(top_votes)
@@ -326,50 +333,52 @@ class Utils:
 
         return reg_voxel_diff, ncc_voxel_diff, reg_diff
 
-    def plot_regression(self, reg_poi, voting_map):
+    def plot_regression(self, ncc_poi, reg_poi, voting_map):
 
         #reduced_size = (2*self._reduced_size+1)
 
         #[z_reg, y_reg, x_reg] = [np.reshape(regression[:,ind], reduced_size) for ind in range(0,3)]
         #regression_map = np.sqrt(z_reg**2 + y_reg**2 + x_reg**2)
 
-        z_lower = reg_poi[0] - self._reduced_size[0]
-        z_upper = reg_poi[0] + self._reduced_size[0] + 1
-        y_lower = reg_poi[1] - self._reduced_size[1]
-        y_upper = reg_poi[1] + self._reduced_size[1] + 1
-        x_lower = reg_poi[2] - self._reduced_size[2]
-        x_upper = reg_poi[2] + self._reduced_size[2] + 1
+        z_lower = ncc_poi[0] - self._reduced_size[0]  
+        z_upper = ncc_poi[0] + self._reduced_size[0] + 1 
+        y_lower = ncc_poi[1] - self._reduced_size[1] 
+        y_upper = ncc_poi[1] + self._reduced_size[1] + 1
+        x_lower = ncc_poi[2] - self._reduced_size[2] 
+        x_upper = ncc_poi[2] + self._reduced_size[2] + 1  
 
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        plt.autoscale(False)
+        plt.colorbar()
 
-        # plt.figure(frameon =False)
-        # currentAxis = plt.gca()
-        # plt.imshow((voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        # plt.autoscale(False)
-        # plt.colorbar()
+        plt.savefig('voting_xy.png', bbox_inches='tight')
 
-        # plt.figure(frameon =False)
-        # currentAxis = plt.gca()
-        # plt.imshow((voting_map[:, reg_poi[1], :]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        # plt.autoscale(False)
-        # plt.colorbar()
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((voting_map[z_lower:z_upper, reg_poi[1], x_lower:x_upper]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        plt.autoscale(False)
+        plt.colorbar()
 
-        # plt.figure(frameon =False)
-        # currentAxis = plt.gca()
-        # plt.imshow((voting_map[:,:,reg_poi[2]]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
-        # plt.autoscale(False)
-        # plt.colorbar()
+        plt.savefig('voting_zx.png', bbox_inches='tight')
 
-        test = voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]
-        xx, yy = np.mgrid[0:test.shape[0], 0:test.shape[1]]
+        plt.figure(frameon =False)
+        currentAxis = plt.gca()
+        plt.imshow((voting_map[z_lower:z_upper,y_lower:y_upper,reg_poi[2]]), plt.get_cmap('jet'), interpolation='nearest', origin='lower')
+        plt.autoscale(False)
+        plt.colorbar()
+
+        plt.savefig('voting_zy.png', bbox_inches='tight')
+
+        #test = voting_map[reg_poi[0], y_lower:y_upper, x_lower:x_upper]
+        #xx, yy = np.mgrid[0:test.shape[0], 0:test.shape[1]]
 
         # create the figure
-        fig = plt.figure(frameon = False)
-        ax = fig.gca(projection='3d')
-        ax.plot_surface(xx, yy, test ,rstride=1, cstride=1, cmap=plt.cm.jet,
-        linewidth=0)
-
-        #plt.savefig('voting.png', bbox_inches='tight')
-
+        #fig = plt.figure(frameon = False)
+        #ax = fig.gca(projection='3d')
+        #ax.plot_surface(xx, yy, test ,rstride=1, cstride=1, cmap=plt.cm.inferno,
+        #linewidth=0)
 
         # plt.figure(frameon =False)
         # currentAxis = plt.gca()
@@ -409,33 +418,63 @@ class Utils:
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+        plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), interpolation = 'nearest', origin='lower')
         plt.autoscale(False)
         plt.plot(self._target_poi[2], self._target_poi[0], marker='o', color='g')
         plt.plot(ncc_poi[2], ncc_poi[0], marker='o', color='r')
         plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        plt.tight_layout()
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom='off', 
+            top='off',
+            labelbottom='off',
+            right='off', 
+            left='off', 
+            labelleft='off')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), origin='lower')
+        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), interpolation = 'nearest', origin='lower')
         plt.autoscale(False)
         plt.plot(self._target_poi[1], self._target_poi[0], marker='o', color='g')
         plt.plot(ncc_poi[1], ncc_poi[0], marker='o', color='r')
         plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
         ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        plt.tight_layout()
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom='off', 
+            top='off',
+            labelbottom='off',
+            right='off', 
+            left='off', 
+            labelleft='off')
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
-        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), origin='lower')
+        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), interpolation = 'nearest', origin='lower')
         plt.autoscale(False)
         plt.plot(self._target_poi[2], self._target_poi[1], marker='o', color='g')
         plt.plot(ncc_poi[2], ncc_poi[1], marker='o', color='r')
         plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
+        plt.tight_layout()
+        plt.tick_params(
+            axis='both',
+            which='both',
+            bottom='off', 
+            top='off',
+            labelbottom='off',
+            right='off', 
+            left='off', 
+            labelleft='off')
 
         plt.show()
 

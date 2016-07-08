@@ -7,7 +7,7 @@ import numpy as np
 def main():
 
     ''' Choose parameter file'''
-    parameter_file = "/home/hannes/code/git/multi2/parameters/parameters_T9.json"
+    parameter_file = "/home/hannes/code/git/multi2/parameters/parameters_T11.json"
 
     ''' Create module object '''
     module = Module(parameter_file)
@@ -21,13 +21,13 @@ def main():
     ''' Forest training'''
     estimators = module.training(filter_bank, filter_parameters)
 
-    #estimators = joblib.load('/home/hannes/code/git/multi2/RegressionForest.pkl')
+    #estimators = joblib.load('/home/hannes/code/git/multi2/forest/RegressionForest.pkl')
 
     ''' Testing'''
-    error, voxel_error = module.testing(estimators, filter_bank, filter_parameters)
+    #error, voxel_error = module.testing(estimators, filter_bank, filter_parameters)
 
     ''' Plot the distribution '''
-    plot_distribution(error, voxel_error)
+    #plot_distribution(error, voxel_error)
 
 
 if __name__ == "__main__":

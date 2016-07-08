@@ -4,7 +4,7 @@ import numpy as np
 
 def validation():
 
-    project = 'LF4'
+    project = 'LF5'
 
     ''' Choose parameter file'''
     parameter_file = '/media/hannes/localDrive/trained/multi2/' + project + '/parameters.json'

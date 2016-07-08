@@ -7,7 +7,7 @@ import numpy as np
 import json
 
 class Module:
-    with open('/home/hannes/code/git/parameters.json') as json_file:
+    with open('/media/hannes/localDrive/trained/scalar/RightFemur/test7/parameters.json') as json_file:
         json_data = json.load(json_file)
 
     directory = json_data['directory']
@@ -110,9 +110,6 @@ class Module:
             ''' Extract ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
 
-            #''' Extract weights '''
-            #weights = extract_weights(ground_truth)
-
             ''' Extract features '''
             water_features, fat_features = feature.haar_extraction(reduced_water, reduced_fat, filter_bank, filter_parameters)
 
@@ -124,7 +121,6 @@ class Module:
             ''' Stack features, ground truth and weights'''
             train_features = np.vstack([train_features, extracted_features]) if train_features.size else extracted_features
             train_ground_truth = np.hstack([train_ground_truth, ground_truth]) if train_ground_truth.size else ground_truth
-            #train_weights = np.hstack([train_weights, weights]) if train_weights.size else weights
 
 
         ''' Create regression class object '''
@@ -134,14 +130,14 @@ class Module:
         estimators = regressor.generate_estimator(train_features, train_ground_truth)#, train_weights)
 
         ''' Save forest to file'''
-        joblib.dump(estimators, 'RegressionForest.pkl', compress=1)
+        joblib.dump(estimators, 'RegressionForest.pkl', compress=3)
 
         return estimators
 
     def testing(estimators, filter_bank, filter_parameters):
 
         ''' Empty list for storing displacement from target POI'''
-        reg_error, ncc_error, reg_voxel_error, ncc_voxel_error = [], [], np.array([]), np.array([]);
+        reg_error, ncc_error, inliers, reg_voxel_error, ncc_voxel_error = [], [], [], np.array([]), np.array([]);
 
         for target in Module.test_targets:
 
@@ -156,7 +152,7 @@ class Module:
             prototype_data, prototype_pois = utils.load_prototypes(prototype_path)
 
             ''' Init POI as just the ground truth + noise to reduce training time'''
-            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi = utils.init_poi(prototype_data, prototype_pois)
+            reduced_water, reduced_fat, reduced_mask, ncc_diff, ncc_poi, inlier = utils.init_poi(prototype_data, prototype_pois)
 
             ''' Extract testing ground truth '''
             ground_truth = utils.extract_ground_truth(reduced_mask)
@@ -184,12 +180,14 @@ class Module:
             print(reg_diff)
 
             ''' Plot the regression map '''
-            #utils.plot_regression(regression)
+            utils.plot_regression(regression)
     
             reg_error.append(reg_diff)
             ncc_error.append(ncc_diff)
+            inliers.append(inlier)
 
-            #utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
+
+            utils.plot_reduced(reduced_water, ncc_poi, reg_poi)
 
             reg_voxel_error = np.vstack([reg_voxel_error, reg_voxel_diff]) if reg_voxel_error.size else reg_voxel_diff
             ncc_voxel_error = np.vstack([ncc_voxel_error, ncc_voxel_diff]) if ncc_voxel_error.size else ncc_voxel_diff
@@ -200,6 +198,8 @@ class Module:
 
         np.save('error.npy', error)
         np.save('voxel_error.npy', voxel_error)
+        np.save('inliers.npy', inliers)
+
 
         print(np.mean(reg_error))
         print(np.std(reg_error))
