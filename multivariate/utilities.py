@@ -343,53 +343,53 @@ class Utils:
 
         reduced_size = self._reduced_size
 
-        # pos = (ncc_poi[2]+3, ncc_poi[0]+3)
-
-        # plt.figure(frameon =False)
-        # currentAxis = plt.gca()
-        # plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
-        # plt.autoscale(False)
-        # plt.plot(pos[0], pos[1], marker='o', color='r')
-        # currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
-        # ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
-
-        # currentAxis.add_patch(Rectangle((pos[0]-5,\
-        # pos[1]-5), 3, 5, fill=None, edgecolor="green"))
-
-        # currentAxis.add_patch(Rectangle((pos[0]+2,\
-        # pos[1]+2), 5, 3, fill=None, edgecolor="red"))
-
-        ''' Plot reduced area boxes around best poi and predicted poi'''
+        pos = (ncc_poi[2]+3, ncc_poi[0]+3)
 
         plt.figure(frameon =False)
         currentAxis = plt.gca()
         plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
         plt.autoscale(False)
-        plt.plot(self._target_poi[2], self._target_poi[0], marker='o', color='g')
-        plt.plot(ncc_poi[2], ncc_poi[0], marker='o', color='r')
-        plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
+        plt.plot(pos[0], pos[1], marker='o', color='r')
         currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
         ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
 
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), origin='lower')
-        plt.autoscale(False)
-        plt.plot(self._target_poi[1], self._target_poi[0], marker='o', color='g')
-        plt.plot(ncc_poi[1], ncc_poi[0], marker='o', color='r')
-        plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
-        currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
-        ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+        currentAxis.add_patch(Rectangle((pos[0]-5,\
+        pos[1]-5), 3, 5, fill=None, edgecolor="green"))
 
-        plt.figure(frameon =False)
-        currentAxis = plt.gca()
-        plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), origin='lower')
-        plt.autoscale(False)
-        plt.plot(self._target_poi[2], self._target_poi[1], marker='o', color='g')
-        plt.plot(ncc_poi[2], ncc_poi[1], marker='o', color='r')
-        plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
-        currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
-        ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
+        currentAxis.add_patch(Rectangle((pos[0]+2,\
+        pos[1]+2), 5, 3, fill=None, edgecolor="red"))
+
+        ''' Plot reduced area boxes around best poi and predicted poi'''
+
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((self._water_data[:, self._target_poi[1],:]), plt.get_cmap('gray'), origin='lower')
+        # plt.autoscale(False)
+        # plt.plot(self._target_poi[2], self._target_poi[0], marker='o', color='g')
+        # plt.plot(ncc_poi[2], ncc_poi[0], marker='o', color='r')
+        # plt.plot(reg_poi[2], reg_poi[0], marker='o', color='b')
+        # currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
+        # ncc_poi[0]-reduced_size[0]), reduced_size[2]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((self._water_data[:,:,self._target_poi[2]]), plt.get_cmap('gray'), origin='lower')
+        # plt.autoscale(False)
+        # plt.plot(self._target_poi[1], self._target_poi[0], marker='o', color='g')
+        # plt.plot(ncc_poi[1], ncc_poi[0], marker='o', color='r')
+        # plt.plot(reg_poi[1], reg_poi[0], marker='o', color='b')
+        # currentAxis.add_patch(Rectangle((ncc_poi[1]-reduced_size[1],\
+        # ncc_poi[0]-reduced_size[0]), reduced_size[1]*2+1, reduced_size[0]*2+1, fill=None, edgecolor="blue"))
+
+        # plt.figure(frameon =False)
+        # currentAxis = plt.gca()
+        # plt.imshow((self._water_data[self._target_poi[0],:,:]), plt.get_cmap('gray'), origin='lower')
+        # plt.autoscale(False)
+        # plt.plot(self._target_poi[2], self._target_poi[1], marker='o', color='g')
+        # plt.plot(ncc_poi[2], ncc_poi[1], marker='o', color='r')
+        # plt.plot(reg_poi[2], reg_poi[1], marker='o', color='b')
+        # currentAxis.add_patch(Rectangle((ncc_poi[2]-reduced_size[2],\
+        # ncc_poi[1]-reduced_size[1]), reduced_size[2]*2+1, reduced_size[1]*2+1, fill=None, edgecolor="blue"))
 
         plt.show()
 
