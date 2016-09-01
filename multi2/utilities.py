@@ -164,8 +164,8 @@ class Utils:
             reduced_prototype = prototype[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
             reduced_target = self._water_data[z_lower:z_upper, y_lower:y_upper, x_lower:x_upper]
 
-            lowpass_prototype = gaussian_filter(reduced_prototype,0.5,mode='constant')
-            lowpass_target = gaussian_filter(reduced_target,0.5,mode='constant')
+            lowpass_prototype = gaussian_filter(reduced_prototype, 0.5, mode='constant')
+            lowpass_target = gaussian_filter(reduced_target, 0.5, mode='constant')
 
             ''' Create binary mask of the reduced space'''
             reduced_mask_copy = reduced_mask.copy()
